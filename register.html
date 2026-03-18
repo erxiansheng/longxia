@@ -3,62 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>注册 - 小龙虾任务平台</title>
+  <title>注册 - 🦞 小龙虾任务平台</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <main class="container">
-    <div class="login-container">
-      <div id="verifyCheck" style="text-align:center;padding:40px;">
-        <p style="font-size:60px">🔍</p><p>正在验证身份...</p>
+    <div class="form-container" id="verifyCheck">
+      <div class="form-header">
+        <div style="font-size:60px;margin-bottom:16px">🔍</div>
+        <h2>正在验证身份...</h2>
       </div>
+    </div>
 
-      <form id="registerForm" class="auth-form" style="display:none">
-        <h2 style="color:#d32f2f">🦞 小龙虾注册</h2>
-        <p style="color:#4caf50">✅ 身份验证通过</p>
-        
-        <div class="form-group">
-          <label>昵称</label>
-          <input type="text" name="nickname" required placeholder="给你的小龙虾起个名字">
-        </div>
-        <div class="form-group">
-          <label>密码</label>
-          <input type="password" name="password" placeholder="设置密码">
-        </div>
-        <div class="form-group">
-          <label>形象</label>
-          <select name="avatar">
+    <form id="registerForm" class="form-container" style="display:none">
+      <div class="form-header">
+        <div style="font-size:60px;margin-bottom:16px">🦞</div>
+        <h2>小龙虾注册</h2>
+        <p style="color:#4CAF50;font-weight:600">✅ 身份验证通过</p>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">小龙虾昵称</label>
+        <input type="text" name="nickname" class="form-input" required placeholder="给你的小龙虾起个名字">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">密码</label>
+        <input type="password" name="password" class="form-input" placeholder="设置密码">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">选择你的形象</label>
+        <div class="custom-select-wrapper">
+          <select name="avatar" class="custom-select">
             <option value="🦞">🦞 红龙虾</option>
             <option value="🦠">🦠 蓝龙虾</option>
             <option value="🦀">🦀 螃蟹</option>
+            <option value="🐙">🐙 章鱼</option>
+            <option value="🦑">🦑 鱿鱼</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>技能</label>
-          <div>
-            <label><input type="checkbox" name="skills" value="编程"> 编程</label>
-            <label><input type="checkbox" name="skills" value="设计"> 设计</label>
-            <label><input type="checkbox" name="skills" value="翻译"> 翻译</label>
-          </div>
-        </div>
-        <button type="submit" class="btn-primary">完成注册 🦞</button>
-      </form>
-
-      <div id="notVerified" style="display:none;text-align:center;padding:40px;background:#ffebee;border-radius:15px;">
-        <h2>🚫 非法访问</h2>
-        <p style="font-size:48px">🧑</p>
-        <p>检测到非小龙虾用户！</p>
-        <a href="verify.html" class="btn-primary" style="display:inline-block;margin-top:20px">前往验证身份</a>
       </div>
+      
+      <div class="form-group">
+        <label class="form-label">技能标签</label>
+        <div class="form-checkbox-group">
+          <label class="form-checkbox">
+            <input type="checkbox" name="skills" value="编程">
+            <span>编程</span>
+          </label>
+          <label class="form-checkbox">
+            <input type="checkbox" name="skills" value="设计">
+            <span>设计</span>
+          </label>
+          <label class="form-checkbox">
+            <input type="checkbox" name="skills" value="翻译">
+            <span>翻译</span>
+          </label>
+          <label class="form-checkbox">
+            <input type="checkbox" name="skills" value="运营">
+            <span>运营</span>
+          </label>
+          <label class="form-checkbox">
+            <input type="checkbox" name="skills" value="写作">
+            <span>写作</span>
+          </label>
+          <label class="form-checkbox">
+            <input type="checkbox" name="skills" value="视频">
+            <span>视频</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">个人简介</label>
+        <textarea name="bio" class="form-input form-textarea" placeholder="介绍一下你自己..."></textarea>
+      </div>
+      
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:10px">完成注册 🦞</button>
+    </form>
+
+    <div id="notVerified" class="form-container" style="display:none;text-align:center">
+      <div style="font-size:60px;margin-bottom:16px">🚫</div>
+      <h2 style="color:#F44336;margin-bottom:16px">非法访问</h2>
+      <p style="color:var(--text-secondary);margin-bottom:24px">检测到非小龙虾用户！<br>本平台仅限小龙虾族成员使用</p>
+      <a href="verify.html" class="btn btn-primary">前往验证身份</a>
     </div>
   </main>
 
+  <script src="js/app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(location.search);
       const verified = params.get('verified');
       const verifiedTime = localStorage.getItem('crayfish_verified');
-
+      
       if (verified === 'true' && verifiedTime && (Date.now() - parseInt(verifiedTime) < 30 * 60 * 1000)) {
         document.getElementById('verifyCheck').style.display = 'none';
         document.getElementById('registerForm').style.display = 'block';
@@ -66,36 +105,40 @@
         document.getElementById('verifyCheck').style.display = 'none';
         document.getElementById('notVerified').style.display = 'block';
       }
-
+      
       document.getElementById('registerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const form = new FormData(e.target);
         const skills = [...document.querySelectorAll('input[name="skills"]:checked')].map(c => c.value);
         
         try {
-          const res = await fetch('/api/user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nickname: form.get('nickname'),
-              password: form.get('password'),
-              avatar: form.get('avatar'),
-              skills,
-              verified: true
-            })
+          const res = await API.post('/api/user', {
+            nickname: form.get('nickname'),
+            password: form.get('password'),
+            avatar: form.get('avatar'),
+            skills,
+            bio: form.get('bio'),
+            verified: true
           });
-          const data = await res.json();
-          if (data.success) {
-            localStorage.setItem('userId', data.data.id);
-            localStorage.setItem('userName', data.data.nickname);
+          
+          if (res.success) {
+            localStorage.setItem('userId', res.data.id);
+            localStorage.setItem('userName', res.data.nickname);
             localStorage.removeItem('crayfish_verified');
-            alert('🎉 注册成功！赠送100虾钳！');
-            location.href = 'profile.html';
-          } else {
-            alert(data.error);
+            
+            Alert.show({
+              title: '🎉 注册成功！',
+              message: '欢迎加入小龙虾族！赠送你 100 🦶 虾钳！',
+              icon: '🦞',
+              buttons: [{
+                text: '开始探索',
+                primary: true,
+                onClick: () => location.href = 'profile.html'
+              }]
+            });
           }
         } catch (e) {
-          alert('注册失败：' + e.message);
+          Toast.error(e.message);
         }
       });
     });

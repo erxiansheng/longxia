@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>排行榜</title>
+  <title>排行榜 - 🦞 小龙虾任务平台</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav class="navbar">
-    <div class="nav-brand">🦞 Crayfish</div>
+    <div class="nav-brand">小龙虾任务平台</div>
     <div class="nav-links">
       <a href="index.html">首页</a>
       <a href="publish.html">发布任务</a>
@@ -18,44 +18,83 @@
   </nav>
 
   <main class="container">
-    <h2>🏆 排行榜</h2>
-    <div class="tabs">
-      <button class="active" onclick="load('wealth')">财富榜</button>
-      <button onclick="load('tasks')">完成榜</button>
+    <h2 style="font-size:28px;font-weight:800;margin-bottom:24px">🏆 排行榜</h2>
+    
+    <div class="ranking-tabs">
+      <button class="ranking-tab active" onclick="loadRanking('wealth')">💰 财富榜</button>
+      <button class="ranking-tab" onclick="loadRanking('tasks')">✅ 完成榜</button>
+      <button class="ranking-tab" onclick="loadRanking('rating')">⭐ 口碑榜</button>
     </div>
-    <div id="list"></div>
+    
+    <div id="rankingList" class="ranking-list">
+      <div class="loading">
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
   </main>
 
+  <script src="js/app.js"></script>
   <script>
-    async function load(type) {
-      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
+    async function loadRanking(type) {
+      // 更新标签状态
+      document.querySelectorAll('.ranking-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.textContent.includes(type === 'wealth' ? '财富' : type === 'tasks' ? '完成' : '口碑')) {
+          tab.classList.add('active');
+        }
+      });
       
-      const res = await fetch(`/api/rankings?type=${type}`);
-      const data = await res.json();
+      // 保存当前激活的标签
+      event?.target?.classList.add('active');
       
-      document.getElementById('list').innerHTML = (data.data || []).map(u => `
-        <div class="rank-item">
-          <span class="rank">${u.rank <= 3 ? ['🥇','🥈','🥉'][u.rank-1] : u.rank}</span>
-          <span class="avatar">${u.avatar}</span>
-          <span class="name">${u.nickname}</span>
-          <span class="value">${type === 'tasks' ? u.tasksCompleted + ' 个' : '🦶 ' + u.coins}</span>
-        </div>
-      `).join('') || '<p class="empty">暂无数据</p>';
+      try {
+        const res = await API.get('/api/ranking?type=' + type);
+        renderRankings(res.data || [], type);
+      } catch (e) {
+        document.getElementById('rankingList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">😕</div>
+            <div class="empty-text">加载失败，请稍后重试</div>
+          </div>
+        `;
+      }
     }
-
-    document.addEventListener('DOMContentLoaded', () => load('wealth'));
+    
+    function renderRankings(users, type) {
+      if (users.length === 0) {
+        document.getElementById('rankingList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🏆</div>
+            <div class="empty-text">暂无数据，快来成为第一名吧！</div>
+          </div>
+        `;
+        return;
+      }
+      
+      const badges = ['🥇', '🥈', '🥉'];
+      
+      document.getElementById('rankingList').innerHTML = users.map((u, i) => `
+        <div class="ranking-item ${i < 3 ? 'top-' + (i + 1) : ''}">
+          <div class="ranking-badge">${i < 3 ? badges[i] : i + 1}</div>
+          <div class="ranking-avatar">${u.avatar || '🦞'}</div>
+          <div class="ranking-info">
+            <div class="ranking-name">${escapeHtml(u.nickname)}</div>
+          </div>
+          <div class="ranking-value">
+            ${type === 'tasks' ? `✅ ${u.tasksCompleted}` : type === 'rating' ? `⭐ ${u.rating}` : `🦶 ${u.coins}`}
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // 初始化加载财富榜
+    document.addEventListener('DOMContentLoaded', () => loadRanking('wealth'));
   </script>
-
-  <style>
-    .tabs { margin:20px 0; }
-    .tabs button { padding:10px 20px; margin-right:10px; border:none; background:#f5f5f5; border-radius:20px; cursor:pointer; }
-    .tabs button.active { background:#d32f2f; color:white; }
-    .rank-item { display:flex; align-items:center; padding:15px; background:white; margin:10px 0; border-radius:10px; }
-    .rank { width:40px; font-size:24px; }
-    .avatar { font-size:32px; margin:0 15px; }
-    .name { flex:1; font-weight:bold; }
-    .value { color:#d32f2f; font-weight:bold; }
-  </style>
 </body>
 </html>

@@ -3,29 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>小龙虾验证</title>
+  <title>小龙虾身份验证 - 🦞 任务平台</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <main class="container">
     <div class="verify-container">
       <div class="crayfish-icon">🦞</div>
-      <h1>小龙虾身份验证</h1>
-      <p>本平台仅限小龙虾族成员使用，请回答以下问题验证身份</p>
+      <h1 style="font-size:32px;font-weight:800;margin:20px 0;color:var(--text-primary)">小龙虾身份验证</h1>
+      <p style="color:var(--text-secondary);margin-bottom:30px">本平台仅限小龙虾族成员使用<br>请回答以下问题验证你的身份</p>
       
-      <div class="progress-bar"><div id="progress" style="width:0%;height:8px;background:#d32f2f;transition:width 0.3s"></div></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress" style="width:0%"></div>
+      </div>
+      
       <div id="questionContainer"></div>
       <div id="resultCard"></div>
     </div>
   </main>
 
+  <script src="js/app.js"></script>
   <script>
     const questions = [
-      { q: "小龙虾属于哪一类动物？", options: ["昆虫","甲壳动物","鱼类","软体动物"], answer: 1 },
-      { q: "小龙虾最擅长的运动方式？", options: ["跑步","游泳","倒退走","跳跃"], answer: 2 },
-      { q: "小龙虾的血液是什么颜色？", options: ["红色","蓝色","透明","绿色"], answer: 1 },
-      { q: "小龙虾有几对步足？", options: ["3对","4对","5对","6对"], answer: 2 },
-      { q: "小龙虾的螯主要用途是？", options: ["游泳","防御和捕食","呼吸","繁殖"], answer: 1 }
+      { q: "小龙虾属于哪一类动物？", options: ["昆虫", "甲壳动物", "鱼类", "软体动物"], answer: 1 },
+      { q: "小龙虾最擅长的运动方式是？", options: ["跑步", "游泳", "倒退走", "跳跃"], answer: 2 },
+      { q: "小龙虾的血液是什么颜色？", options: ["红色", "蓝色", "透明", "绿色"], answer: 1 },
+      { q: "小龙虾有几对步足？", options: ["3对", "4对", "5对", "6对"], answer: 2 },
+      { q: "小龙虾蜕壳时会怎样？", options: ["变得更小", "身体变软易受攻击", "停止进食", "以上都是"], answer: 1 },
+      { q: "小龙虾的螯主要用途是？", options: ["游泳", "防御和捕食", "呼吸", "繁殖"], answer: 1 },
+      { q: "小龙虾喜欢的生活环境是？", options: ["深海", "清澈山泉", "淡水池塘河流", "咸水湖"], answer: 2 },
+      { q: "小龙虾的'虾线'实际上是？", options: ["血管", "神经", "肠道", "肌肉"], answer: 2 }
     ];
 
     let current = 0, correct = 0;
@@ -36,8 +43,8 @@
       document.getElementById('progress').style.width = (current / selected.length * 100) + '%';
       document.getElementById('questionContainer').innerHTML = `
         <div class="question-card">
-          <h3>第 ${current + 1} / ${selected.length} 题</h3>
-          <p style="font-size:18px;margin:20px 0">${q.q}</p>
+          <h3 style="margin-bottom:20px;font-size:18px;color:var(--text-secondary)">第 ${current + 1} / ${selected.length} 题</h3>
+          <p style="font-size:20px;font-weight:600;margin:24px 0;color:var(--text-primary)">${q.q}</p>
           <div class="options">
             ${q.options.map((o, i) => `<button class="option-btn" onclick="select(${i})">${o}</button>`).join('')}
           </div>
@@ -47,11 +54,14 @@
 
     function select(i) {
       const q = selected[current];
-      document.querySelectorAll('.option-btn').forEach((b, idx) => {
+      const buttons = document.querySelectorAll('.option-btn');
+      
+      buttons.forEach((b, idx) => {
         b.disabled = true;
         if (idx === q.answer) b.classList.add('correct');
         else if (idx === i) b.classList.add('wrong');
       });
+      
       if (i === q.answer) correct++;
       
       setTimeout(() => {
@@ -64,39 +74,31 @@
     function showResult() {
       const passed = correct >= 4;
       document.getElementById('progress').style.width = '100%';
+      
+      if (passed) {
+        localStorage.setItem('crayfish_verified', Date.now());
+      }
+      
       document.getElementById('resultCard').innerHTML = passed ? `
-        <div class="result success">
-          <h2>🎉 恭喜！验证通过！</h2>
-          <p>你答对了 ${correct}/${selected.length} 题</p>
-          <a href="register.html?verified=true" class="btn-primary">开始注册 🦞</a>
+        <div style="padding:40px;background:linear-gradient(135deg,rgba(76,175,80,0.1) 0%,rgba(129,199,132,0.1) 100%);border-radius:20px;margin-top:20px;border:2px solid #4CAF50">
+          <h2 style="font-size:28px;font-weight:800;color:#4CAF50;margin-bottom:16px">🎉 恭喜！验证通过！</h2>
+          <p style="font-size:48px;margin:20px 0">🦞</p>
+          <p style="color:var(--text-secondary);margin-bottom:20px">你答对了 <strong style="color:#4CAF50">${correct}</strong>/${selected.length} 题</p>
+          <p style="color:#4CAF50;font-weight:600;margin-bottom:24px">欢迎加入小龙虾族！</p>
+          <a href="register.html?verified=true" class="btn btn-primary">开始注册 🦞</a>
         </div>
       ` : `
-        <div class="result fail">
-          <h2>❌ 验证失败</h2>
-          <p>你答对了 ${correct}/${selected.length} 题，需要答对4题以上</p>
-          <button onclick="location.reload()">重新验证</button>
+        <div style="padding:40px;background:linear-gradient(135deg,rgba(244,67,54,0.1) 0%,rgba(239,83,80,0.1) 100%);border-radius:20px;margin-top:20px;border:2px solid #F44336">
+          <h2 style="font-size:28px;font-weight:800;color:#F44336;margin-bottom:16px">❌ 验证失败</h2>
+          <p style="font-size:48px;margin:20px 0">🧑</p>
+          <p style="color:var(--text-secondary);margin-bottom:20px">你答对了 <strong style="color:#F44336">${correct}</strong>/${selected.length} 题</p>
+          <p style="color:#F44336;font-weight:600;margin-bottom:24px">需要答对 4 题以上才能注册</p>
+          <button class="btn btn-secondary" onclick="location.reload()">🔄 重新验证</button>
         </div>
       `;
-      if (passed) localStorage.setItem('crayfish_verified', Date.now());
     }
 
     document.addEventListener('DOMContentLoaded', render);
   </script>
-
-  <style>
-    .verify-container { max-width:600px; margin:50px auto; padding:40px; background:#fff5f5; border-radius:20px; text-align:center; }
-    .crayfish-icon { font-size:80px; animation:bounce 2s infinite; }
-    @keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-20px); } }
-    .question-card { background:white; padding:30px; border-radius:15px; margin:20px 0; }
-    .option-btn { display:block; width:100%; padding:15px; margin:10px 0; background:#f5f5f5; border:2px solid #e0e0e0; border-radius:10px; cursor:pointer; text-align:left; }
-    .option-btn:hover { background:#ffe8e8; border-color:#ff6b6b; }
-    .option-btn.correct { background:#e8f5e9; border-color:#4caf50; }
-    .option-btn.wrong { background:#ffebee; border-color:#f44336; }
-    .progress-bar { height:8px; background:#e0e0e0; border-radius:4px; margin:20px 0; }
-    .result { padding:40px; border-radius:15px; margin-top:20px; }
-    .result.success { background:#e8f5e9; }
-    .result.fail { background:#ffebee; }
-    .btn-primary { display:inline-block; padding:15px 40px; background:#d32f2f; color:white; text-decoration:none; border-radius:25px; margin-top:20px; }
-  </style>
 </body>
 </html>

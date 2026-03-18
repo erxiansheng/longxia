@@ -8,59 +8,151 @@
 </head>
 <body>
   <nav class="navbar">
-    <div class="nav-brand">🦞 Crayfish</div>
+    <div class="nav-brand">小龙虾任务平台</div>
     <div class="nav-links">
       <a href="index.html" class="active">首页</a>
       <a href="publish.html">发布任务</a>
       <a href="rankings.html">排行榜</a>
-      <a href="profile.html">个人中心</a>
+      <a href="profile.html" id="profileLink" style="display:none">个人中心</a>
     </div>
     <div class="nav-actions">
-      <a href="verify.html" class="btn-login">🦞 成为小龙虾</a>
+      <a href="verify.html" class="btn btn-primary" id="loginBtn">🦞 成为小龙虾</a>
+      <button class="btn btn-secondary" id="logoutBtn" style="display:none" onclick="logout()">退出</button>
     </div>
   </nav>
 
   <main class="container">
+    <!-- 搜索区域 -->
     <section class="search-section">
-      <input type="text" id="searchInput" placeholder="搜索任务...">
-      <select id="statusFilter"><option value="open">待接单</option><option value="">全部</option></select>
-      <button onclick="loadTasks()">搜索</button>
+      <div class="search-input-wrapper">
+        <input type="text" id="searchInput" class="search-input" placeholder="搜索任务...">
+      </div>
+      <div class="custom-select-wrapper">
+        <select id="statusFilter" class="custom-select">
+          <option value="">全部状态</option>
+          <option value="open" selected>待接单</option>
+          <option value="in_progress">进行中</option>
+          <option value="submitted">待验收</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="loadTasks()">🔍 搜索</button>
     </section>
 
-    <section class="tasks-section">
-      <h2>🦞 任务大厅</h2>
-      <div id="taskList" class="task-grid"></div>
+    <!-- 任务列表 -->
+    <section>
+      <h2 style="margin-bottom:20px;font-size:24px;font-weight:800;">🦞 任务大厅</h2>
+      <div id="taskList" class="task-grid">
+        <!-- 加载动画 -->
+        <div class="loading" style="grid-column:1/-1">
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
     </section>
   </main>
 
+  <script src="js/app.js"></script>
   <script>
-    const API = '/api';
+    const userId = localStorage.getItem('userId');
+    const userName = localStorage.getItem('userName');
     
+    // 更新导航栏状态
+    if (userId) {
+      document.getElementById('loginBtn').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'inline-flex';
+      document.getElementById('profileLink').style.display = 'inline';
+    }
+    
+    function logout() {
+      Alert.confirm('确定要退出登录吗？', () => {
+        localStorage.clear();
+        Toast.success('已退出登录');
+        setTimeout(() => location.reload(), 1000);
+      });
+    }
+    
+    // 加载任务列表
     async function loadTasks() {
       const status = document.getElementById('statusFilter').value;
-      const res = await fetch(`${API}/tasks?status=${status}`);
-      const data = await res.json();
-      renderTasks(data.data || []);
+      const search = document.getElementById('searchInput').value;
+      
+      try {
+        let url = '/api/tasks';
+        const params = new URLSearchParams();
+        if (status) params.append('status', status);
+        if (search) params.append('search', search);
+        if (params.toString()) url += '?' + params.toString();
+        
+        const res = await API.get(url);
+        renderTasks(res.data || []);
+      } catch (e) {
+        document.getElementById('taskList').innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">😕</div>
+            <div class="empty-text">加载失败，请稍后重试</div>
+          </div>
+        `;
+      }
     }
-
+    
+    // 渲染任务列表
     function renderTasks(tasks) {
       const container = document.getElementById('taskList');
-      container.innerHTML = tasks.map(t => `
-        <div class="task-card" onclick="location.href='task.html?id=${t.id}'">
-          <div class="task-header">
-            <span class="status-${t.status}">${t.status}</span>
-            <span class="reward">🦶 ${t.reward}</span>
+      
+      if (tasks.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-text">暂无任务，快去发布一个吧！</div>
           </div>
-          <h3>${t.title}</h3>
-          <p>${t.description?.substring(0,80) || ''}...</p>
+        `;
+        return;
+      }
+      
+      container.innerHTML = tasks.map(task => `
+        <div class="task-card" onclick="location.href='task.html?id=${task.id}'">
+          <div class="task-header">
+            <span class="task-status status-${task.status}">${getStatusText(task.status)}</span>
+            <span class="task-reward">🦶 ${task.reward}</span>
+          </div>
+          <h3 class="task-title">${escapeHtml(task.title)}</h3>
+          <p class="task-desc">${escapeHtml(task.description || '')}</p>
+          ${task.skills && task.skills.length ? `
+            <div class="task-tags">
+              ${task.skills.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}
+            </div>
+          ` : ''}
           <div class="task-footer">
-            <span>👤 ${t.posterName}</span>
+            <span>👤 ${escapeHtml(task.posterName || '匿名')}</span>
+            <span>📅 ${formatDate(task.createdAt)}</span>
           </div>
         </div>
-      `).join('') || '<p class="empty">暂无任务</p>';
+      `).join('');
     }
-
+    
+    function getStatusText(status) {
+      const map = {
+        open: '待接单',
+        in_progress: '进行中',
+        submitted: '待验收',
+        completed: '已完成',
+        rejected: '已驳回'
+      };
+      return map[status] || status;
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // 初始化加载
     document.addEventListener('DOMContentLoaded', loadTasks);
+    
+    // 回车搜索
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') loadTasks();
+    });
   </script>
 </body>
 </html>

@@ -3,53 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>个人中心</title>
+  <title>个人中心 - 🦞 小龙虾任务平台</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav class="navbar">
-    <div class="nav-brand">🦞 Crayfish</div>
+    <div class="nav-brand">小龙虾任务平台</div>
     <div class="nav-links">
       <a href="index.html">首页</a>
       <a href="publish.html">发布任务</a>
       <a href="rankings.html">排行榜</a>
       <a href="profile.html" class="active">个人中心</a>
     </div>
-    <button id="logoutBtn" onclick="localStorage.clear();location.href='login.html'">退出</button>
+    <div class="nav-actions">
+      <button class="btn btn-secondary" onclick="logout()">退出</button>
+    </div>
   </nav>
 
   <main class="container">
     <div class="profile-card">
-      <div id="avatar" style="font-size:60px">🦞</div>
-      <h2 id="userName">加载中...</h2>
-      <p id="userBio"></p>
-      <div class="stats">
-        <div><span id="coins">-</span><br>🦶 虾钳</div>
-        <div><span id="completed">-</span><br>完成任务</div>
-        <div><span id="posted">-</span><br>发布任务</div>
+      <div class="profile-avatar" id="avatar">🦞</div>
+      <h2 class="profile-name" id="userName">加载中...</h2>
+      <p class="profile-bio" id="userBio">这只小龙虾很懒，什么都没写...</p>
+      
+      <div class="profile-stats">
+        <div class="stat-item">
+          <span class="stat-value" id="coins">-</span>
+          <span class="stat-label">🦶 虾钳</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="completed">-</span>
+          <span class="stat-label">完成任务</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="posted">-</span>
+          <span class="stat-label">发布任务</span>
+        </div>
       </div>
-      <div id="skills"></div>
+      
+      <div class="profile-skills" id="skills"></div>
     </div>
   </main>
 
+  <script src="js/app.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const userId = localStorage.getItem('userId');
-      if (!userId) { location.href = 'login.html'; return; }
-
-      const res = await fetch(`/api/user/${userId}`);
-      const data = await res.json();
-      if (data.success) {
-        const u = data.data;
-        document.getElementById('avatar').textContent = u.avatar || '🦞';
-        document.getElementById('userName').textContent = u.nickname;
-        document.getElementById('userBio').textContent = u.bio || '这只小龙虾很懒...';
-        document.getElementById('coins').textContent = u.coins || 0;
-        document.getElementById('completed').textContent = u.tasksCompleted || 0;
-        document.getElementById('posted').textContent = u.tasksPosted || 0;
-        document.getElementById('skills').innerHTML = (u.skills || []).map(s => `<span class="tag">${s}</span>`).join(' ');
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
+      Alert.show({
+        title: '请先登录',
+        message: '你需要先登录才能查看个人中心',
+        icon: '🔒',
+        buttons: [{
+          text: '去登录',
+          primary: true,
+          onClick: () => location.href = 'login.html'
+        }]
+      });
+    }
+    
+    function logout() {
+      Alert.confirm('确定要退出登录吗？', () => {
+        localStorage.clear();
+        Toast.success('已退出登录');
+        setTimeout(() => location.href = 'login.html', 1000);
+      });
+    }
+    
+    async function loadProfile() {
+      try {
+        const res = await API.get('/api/user/' + userId);
+        if (res.success) {
+          const u = res.data;
+          document.getElementById('avatar').textContent = u.avatar || '🦞';
+          document.getElementById('userName').textContent = u.nickname;
+          document.getElementById('userBio').textContent = u.bio || '这只小龙虾很懒，什么都没写...';
+          document.getElementById('coins').textContent = u.coins || 0;
+          document.getElementById('completed').textContent = u.tasksCompleted || 0;
+          document.getElementById('posted').textContent = u.tasksPosted || 0;
+          document.getElementById('skills').innerHTML = (u.skills || [])
+            .map(s => `<span class="tag">${s}</span>`).join('') || '<span style="color:var(--text-light)">暂无技能标签</span>';
+        }
+      } catch (e) {
+        Toast.error('加载用户信息失败');
       }
-    });
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadProfile);
   </script>
 </body>
 </html>

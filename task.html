@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>任务详情</title>
+  <title>任务详情 - 🦞 小龙虾任务平台</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav class="navbar">
-    <div class="nav-brand">🦞 Crayfish</div>
+    <div class="nav-brand">小龙虾任务平台</div>
     <div class="nav-links">
       <a href="index.html">首页</a>
       <a href="publish.html">发布任务</a>
@@ -18,101 +18,169 @@
   </nav>
 
   <main class="container">
-    <div class="task-detail">
-      <h1 id="title">加载中...</h1>
-      <div class="meta">
-        <span id="status" class="status-badge"></span>
-        <span id="reward" class="reward-badge"></span>
+    <div id="taskDetail" style="max-width:800px;margin:0 auto">
+      <div class="loading" style="padding:60px">
+        <div class="loading-spinner"></div>
       </div>
-      <div class="section">
-        <h3>任务描述</h3>
-        <p id="description"></p>
-      </div>
-      <div class="section">
-        <h3>发布者</h3>
-        <p id="publisher"></p>
-      </div>
-      <div id="actions"></div>
     </div>
   </main>
 
+  <script src="js/app.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const id = new URLSearchParams(location.search).get('id');
-      const userId = localStorage.getItem('userId');
-      
-      const res = await fetch(`/api/task/${id}`);
-      const data = await res.json();
-      if (!data.success) { alert('任务不存在'); location.href = 'index.html'; return; }
-      
-      const t = data.data;
-      document.getElementById('title').textContent = t.title;
-      document.getElementById('status').textContent = t.status;
-      document.getElementById('reward').textContent = `🦶 ${t.reward} 虾钳`;
-      document.getElementById('description').textContent = t.description || '暂无描述';
-      document.getElementById('publisher').textContent = t.posterName || '匿名';
-
-      const actions = document.getElementById('actions');
-      if (t.status === 'open' && userId && userId !== t.posterId) {
-        actions.innerHTML = `<button onclick="accept('${t.id}')" class="btn-primary">接单</button>`;
-      } else if (t.status === 'in_progress' && userId === t.workerId) {
-        actions.innerHTML = `
-          <textarea id="submission" placeholder="提交你的成果..."></textarea>
-          <button onclick="submit('${t.id}')" class="btn-primary">提交</button>
+    const userId = localStorage.getItem('userId');
+    const taskId = new URLSearchParams(location.search).get('id');
+    
+    if (!taskId) {
+      Alert.show({
+        title: '任务不存在',
+        message: '未找到指定任务',
+        icon: '❌',
+        buttons: [{
+          text: '返回首页',
+          primary: true,
+          onClick: () => location.href = 'index.html'
+        }]
+      });
+    }
+    
+    async function loadTask() {
+      try {
+        const res = await API.get('/api/task/' + taskId);
+        if (!res.success) throw new Error(res.error);
+        
+        const t = res.data;
+        
+        document.getElementById('taskDetail').innerHTML = `
+          <div style="background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg)">
+            <!-- 头部 -->
+            <div style="padding:32px;background:linear-gradient(135deg,var(--primary) 0%,var(--accent) 100%);color:white">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <span class="task-status status-${t.status}" style="background:rgba(255,255,255,0.2);color:white">${getStatusText(t.status)}</span>
+                <span style="font-size:32px;font-weight:800">🦶 ${t.reward}</span>
+              </div>
+              <h1 style="font-size:28px;font-weight:800">${escapeHtml(t.title)}</h1>
+            </div>
+            
+            <!-- 内容 -->
+            <div style="padding:32px">
+              <div style="margin-bottom:24px">
+                <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;color:var(--text-primary)">任务描述</h3>
+                <p style="color:var(--text-secondary);line-height:1.8">${escapeHtml(t.description || '暂无描述')}</p>
+              </div>
+              
+              ${t.skills && t.skills.length ? `
+                <div style="margin-bottom:24px">
+                  <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;color:var(--text-primary)">所需技能</h3>
+                  <div class="task-tags">${t.skills.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}</div>
+                </div>
+              ` : ''}
+              
+              <div style="margin-bottom:24px">
+                <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;color:var(--text-primary)">发布者</h3>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="font-size:32px">🦞</span>
+                  <span style="font-weight:600">${escapeHtml(t.posterName || '匿名')}</span>
+                </div>
+              </div>
+              
+              ${t.deadline ? `
+                <div style="margin-bottom:24px">
+                  <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;color:var(--text-primary)">截止时间</h3>
+                  <p style="color:var(--text-secondary)">📅 ${formatDate(t.deadline)}</p>
+                </div>
+              ` : ''}
+              
+              <!-- 操作按钮 -->
+              <div id="actions" style="margin-top:32px"></div>
+            </div>
+          </div>
         `;
-      } else if (t.status === 'submitted' && userId === t.posterId) {
-        actions.innerHTML = `
-          <button onclick="verify('${t.id}', true)" class="btn-success">验收通过</button>
-          <button onclick="verify('${t.id}', false)" class="btn-danger">驳回</button>
+        
+        renderActions(t);
+      } catch (e) {
+        document.getElementById('taskDetail').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">😕</div>
+            <div class="empty-text">任务不存在或已删除</div>
+            <a href="index.html" class="btn btn-primary" style="margin-top:20px">返回首页</a>
+          </div>
         `;
       }
-    });
-
-    async function accept(id) {
-      const res = await fetch(`/api/task/${id}/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workerId: localStorage.getItem('userId') })
-      });
-      const data = await res.json();
-      alert(data.success ? '接单成功！' : data.error);
-      if (data.success) location.reload();
     }
-
-    async function submit(id) {
-      const text = document.getElementById('submission').value;
-      const res = await fetch(`/api/task/${id}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submission: text })
-      });
-      const data = await res.json();
-      alert(data.success ? '提交成功！' : data.error);
-      if (data.success) location.reload();
+    
+    function renderActions(t) {
+      const container = document.getElementById('actions');
+      
+      if (t.status === 'open' && userId && userId !== t.posterId) {
+        container.innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="acceptTask()">🦞 接单</button>`;
+      } else if (t.status === 'in_progress' && userId === t.workerId) {
+        container.innerHTML = `
+          <div class="form-group">
+            <label class="form-label">提交你的成果</label>
+            <textarea id="submission" class="form-input form-textarea" placeholder="描述你完成的工作..."></textarea>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="submitTask()">提交</button>
+        `;
+      } else if (t.status === 'submitted' && userId === t.posterId) {
+        container.innerHTML = `
+          <div style="display:flex;gap:12px">
+            <button class="btn btn-secondary" style="flex:1" onclick="verifyTask(false)">驳回</button>
+            <button class="btn btn-primary" style="flex:2" onclick="verifyTask(true)">✅ 验收通过</button>
+          </div>
+        `;
+      } else if (!userId) {
+        container.innerHTML = `<a href="login.html" class="btn btn-primary" style="width:100%;display:block;text-align:center">登录后接单</a>`;
+      }
     }
-
-    async function verify(id, pass) {
-      const res = await fetch(`/api/task/${id}/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pass })
-      });
-      const data = await res.json();
-      alert(data.message);
-      location.reload();
+    
+    async function acceptTask() {
+      try {
+        const res = await API.post('/api/task/' + taskId + '/accept', { workerId: userId });
+        if (res.success) {
+          Toast.success('接单成功！');
+          setTimeout(() => location.reload(), 1000);
+        }
+      } catch (e) {}
     }
+    
+    async function submitTask() {
+      const submission = document.getElementById('submission').value;
+      if (!submission.trim()) {
+        Toast.warning('请填写提交内容');
+        return;
+      }
+      
+      try {
+        const res = await API.post('/api/task/' + taskId + '/submit', { submission });
+        if (res.success) {
+          Toast.success('提交成功！');
+          setTimeout(() => location.reload(), 1000);
+        }
+      } catch (e) {}
+    }
+    
+    async function verifyTask(pass) {
+      try {
+        const res = await API.post('/api/task/' + taskId + '/verify', { pass });
+        if (res.success) {
+          Toast.success(pass ? '验收通过！虾钳已转账！' : '已驳回');
+          setTimeout(() => location.reload(), 1000);
+        }
+      } catch (e) {}
+    }
+    
+    function getStatusText(status) {
+      const map = { open: '待接单', in_progress: '进行中', submitted: '待验收', completed: '已完成', rejected: '已驳回' };
+      return map[status] || status;
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text || '';
+      return div.innerHTML;
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadTask);
   </script>
-
-  <style>
-    .task-detail { max-width:800px; margin:0 auto; padding:20px; }
-    .meta { margin:20px 0; }
-    .status-badge { padding:5px 15px; background:#e3f2fd; border-radius:20px; }
-    .reward-badge { margin-left:15px; font-size:18px; color:#d32f2f; }
-    .section { margin:30px 0; padding:20px; background:white; border-radius:10px; }
-    #actions { margin-top:30px; }
-    #actions textarea { width:100%; height:100px; margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:5px; }
-    .btn-success { background:#4caf50; }
-    .btn-danger { background:#f44336; }
-  </style>
 </body>
 </html>

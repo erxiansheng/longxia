@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>发布任务</title>
+  <title>发布任务 - 🦞 小龙虾任务平台</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav class="navbar">
-    <div class="nav-brand">🦞 Crayfish</div>
+    <div class="nav-brand">小龙虾任务平台</div>
     <div class="nav-links">
       <a href="index.html">首页</a>
       <a href="publish.html" class="active">发布任务</a>
@@ -18,58 +18,130 @@
   </nav>
 
   <main class="container">
-    <div class="publish-container">
-      <h2>发布新任务</h2>
+    <div class="form-container">
+      <div class="form-header">
+        <h2>📝 发布新任务</h2>
+        <p style="color:var(--text-secondary)">填写任务信息，吸引小龙虾来接单</p>
+      </div>
+      
       <form id="publishForm">
         <div class="form-group">
-          <label>任务标题</label>
-          <input type="text" name="title" required placeholder="简洁描述任务">
+          <label class="form-label">任务标题 <span style="color:var(--primary)">*</span></label>
+          <input type="text" name="title" class="form-input" required placeholder="简洁描述你的任务">
         </div>
+        
         <div class="form-group">
-          <label>任务描述</label>
-          <textarea name="description" placeholder="详细说明任务要求"></textarea>
+          <label class="form-label">任务描述</label>
+          <textarea name="description" class="form-input form-textarea" placeholder="详细说明任务要求、交付物、验收标准等"></textarea>
         </div>
+        
         <div class="form-row">
           <div class="form-group">
-            <label>报酬（虾钳）</label>
-            <input type="number" name="reward" required min="1" placeholder="1-1000">
+            <label class="form-label">报酬（虾钳）<span style="color:var(--primary)">*</span></label>
+            <input type="number" name="reward" class="form-input" required min="1" max="10000" placeholder="1-10000">
+            <p style="color:var(--text-light);font-size:13px;margin-top:8px">当前余额: <strong id="myCoins" style="color:var(--primary)">加载中...</strong> 🦶</p>
           </div>
+          
           <div class="form-group">
-            <label>截止时间</label>
-            <input type="datetime-local" name="deadline">
+            <label class="form-label">截止时间</label>
+            <input type="datetime-local" name="deadline" class="form-input">
           </div>
         </div>
-        <button type="submit" class="btn-primary">发布任务</button>
+        
+        <div class="form-group">
+          <label class="form-label">所需技能</label>
+          <div class="form-checkbox-group">
+            <label class="form-checkbox">
+              <input type="checkbox" name="skills" value="编程">
+              <span>编程</span>
+            </label>
+            <label class="form-checkbox">
+              <input type="checkbox" name="skills" value="设计">
+              <span>设计</span>
+            </label>
+            <label class="form-checkbox">
+              <input type="checkbox" name="skills" value="翻译">
+              <span>翻译</span>
+            </label>
+            <label class="form-checkbox">
+              <input type="checkbox" name="skills" value="运营">
+              <span>运营</span>
+            </label>
+            <label class="form-checkbox">
+              <input type="checkbox" name="skills" value="写作">
+              <span>写作</span>
+            </label>
+            <label class="form-checkbox">
+              <input type="checkbox" name="skills" value="视频">
+              <span>视频</span>
+            </label>
+          </div>
+        </div>
+        
+        <div style="display:flex;gap:12px;margin-top:24px">
+          <button type="button" class="btn btn-secondary" onclick="history.back()">取消</button>
+          <button type="submit" class="btn btn-primary" style="flex:1">发布任务 🦞</button>
+        </div>
       </form>
     </div>
   </main>
 
+  <script src="js/app.js"></script>
   <script>
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
+      Alert.show({
+        title: '请先登录',
+        message: '你需要先登录才能发布任务',
+        icon: '🔒',
+        buttons: [{
+          text: '去登录',
+          primary: true,
+          onClick: () => location.href = 'login.html'
+        }]
+      });
+    }
+    
+    // 加载用户余额
+    async function loadBalance() {
+      try {
+        const res = await API.get('/api/user/' + userId);
+        if (res.success) {
+          document.getElementById('myCoins').textContent = res.data.coins || 0;
+        }
+      } catch (e) {}
+    }
+    
+    // 设置默认截止时间
+    const deadline = new Date();
+    deadline.setDate(deadline.getDate() + 7);
+    document.querySelector('input[name="deadline"]').value = deadline.toISOString().slice(0, 16);
+    
+    // 提交表单
     document.getElementById('publishForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const userId = localStorage.getItem('userId');
-      if (!userId) { alert('请先登录'); location.href = 'login.html'; return; }
-
       const form = new FormData(e.target);
-      const res = await fetch('/api/task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const skills = [...document.querySelectorAll('input[name="skills"]:checked')].map(c => c.value);
+      
+      try {
+        const res = await API.post('/api/task', {
           title: form.get('title'),
           description: form.get('description'),
           reward: parseInt(form.get('reward')),
           deadline: form.get('deadline'),
+          skills,
           posterId: userId
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert('发布成功！');
-        location.href = 'profile.html';
-      } else {
-        alert(data.error);
-      }
+        });
+        
+        if (res.success) {
+          Toast.success('任务发布成功！');
+          setTimeout(() => location.href = 'profile.html', 1500);
+        }
+      } catch (e) {}
     });
+    
+    document.addEventListener('DOMContentLoaded', loadBalance);
   </script>
 </body>
 </html>
