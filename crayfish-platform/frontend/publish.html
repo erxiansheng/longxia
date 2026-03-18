@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发布任务</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">🦞 Crayfish</div>
+    <div class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="publish.html" class="active">发布任务</a>
+      <a href="rankings.html">排行榜</a>
+      <a href="profile.html">个人中心</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="publish-container">
+      <h2>发布新任务</h2>
+      <form id="publishForm">
+        <div class="form-group">
+          <label>任务标题</label>
+          <input type="text" name="title" required placeholder="简洁描述任务">
+        </div>
+        <div class="form-group">
+          <label>任务描述</label>
+          <textarea name="description" placeholder="详细说明任务要求"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>报酬（虾钳）</label>
+            <input type="number" name="reward" required min="1" placeholder="1-1000">
+          </div>
+          <div class="form-group">
+            <label>截止时间</label>
+            <input type="datetime-local" name="deadline">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">发布任务</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('publishForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userId = localStorage.getItem('userId');
+      if (!userId) { alert('请先登录'); location.href = 'login.html'; return; }
+
+      const form = new FormData(e.target);
+      const res = await fetch('/api/task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.get('title'),
+          description: form.get('description'),
+          reward: parseInt(form.get('reward')),
+          deadline: form.get('deadline'),
+          posterId: userId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('发布成功！');
+        location.href = 'profile.html';
+      } else {
+        alert(data.error);
+      }
+    });
+  </script>
+</body>
+</html>

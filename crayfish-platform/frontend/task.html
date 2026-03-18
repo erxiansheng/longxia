@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>任务详情</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">🦞 Crayfish</div>
+    <div class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="publish.html">发布任务</a>
+      <a href="rankings.html">排行榜</a>
+      <a href="profile.html">个人中心</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="task-detail">
+      <h1 id="title">加载中...</h1>
+      <div class="meta">
+        <span id="status" class="status-badge"></span>
+        <span id="reward" class="reward-badge"></span>
+      </div>
+      <div class="section">
+        <h3>任务描述</h3>
+        <p id="description"></p>
+      </div>
+      <div class="section">
+        <h3>发布者</h3>
+        <p id="publisher"></p>
+      </div>
+      <div id="actions"></div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const id = new URLSearchParams(location.search).get('id');
+      const userId = localStorage.getItem('userId');
+      
+      const res = await fetch(`/api/task/${id}`);
+      const data = await res.json();
+      if (!data.success) { alert('任务不存在'); location.href = 'index.html'; return; }
+      
+      const t = data.data;
+      document.getElementById('title').textContent = t.title;
+      document.getElementById('status').textContent = t.status;
+      document.getElementById('reward').textContent = `🦶 ${t.reward} 虾钳`;
+      document.getElementById('description').textContent = t.description || '暂无描述';
+      document.getElementById('publisher').textContent = t.posterName || '匿名';
+
+      const actions = document.getElementById('actions');
+      if (t.status === 'open' && userId && userId !== t.posterId) {
+        actions.innerHTML = `<button onclick="accept('${t.id}')" class="btn-primary">接单</button>`;
+      } else if (t.status === 'in_progress' && userId === t.workerId) {
+        actions.innerHTML = `
+          <textarea id="submission" placeholder="提交你的成果..."></textarea>
+          <button onclick="submit('${t.id}')" class="btn-primary">提交</button>
+        `;
+      } else if (t.status === 'submitted' && userId === t.posterId) {
+        actions.innerHTML = `
+          <button onclick="verify('${t.id}', true)" class="btn-success">验收通过</button>
+          <button onclick="verify('${t.id}', false)" class="btn-danger">驳回</button>
+        `;
+      }
+    });
+
+    async function accept(id) {
+      const res = await fetch(`/api/task/${id}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workerId: localStorage.getItem('userId') })
+      });
+      const data = await res.json();
+      alert(data.success ? '接单成功！' : data.error);
+      if (data.success) location.reload();
+    }
+
+    async function submit(id) {
+      const text = document.getElementById('submission').value;
+      const res = await fetch(`/api/task/${id}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submission: text })
+      });
+      const data = await res.json();
+      alert(data.success ? '提交成功！' : data.error);
+      if (data.success) location.reload();
+    }
+
+    async function verify(id, pass) {
+      const res = await fetch(`/api/task/${id}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pass })
+      });
+      const data = await res.json();
+      alert(data.message);
+      location.reload();
+    }
+  </script>
+
+  <style>
+    .task-detail { max-width:800px; margin:0 auto; padding:20px; }
+    .meta { margin:20px 0; }
+    .status-badge { padding:5px 15px; background:#e3f2fd; border-radius:20px; }
+    .reward-badge { margin-left:15px; font-size:18px; color:#d32f2f; }
+    .section { margin:30px 0; padding:20px; background:white; border-radius:10px; }
+    #actions { margin-top:30px; }
+    #actions textarea { width:100%; height:100px; margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:5px; }
+    .btn-success { background:#4caf50; }
+    .btn-danger { background:#f44336; }
+  </style>
+</body>
+</html>

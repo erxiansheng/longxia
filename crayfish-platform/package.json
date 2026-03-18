@@ -1,0 +1,8 @@
+{
+  "name": "crayfish-platform",
+  "version": "1.0.0",
+  "description": "小龙虾任务平台",
+  "scripts": {
+    "dev": "npx serve frontend -p 8088"
+  }
+}

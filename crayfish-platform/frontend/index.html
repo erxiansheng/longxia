@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🦞 小龙虾任务平台</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">🦞 Crayfish</div>
+    <div class="nav-links">
+      <a href="index.html" class="active">首页</a>
+      <a href="publish.html">发布任务</a>
+      <a href="rankings.html">排行榜</a>
+      <a href="profile.html">个人中心</a>
+    </div>
+    <div class="nav-actions">
+      <a href="verify.html" class="btn-login">🦞 成为小龙虾</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="search-section">
+      <input type="text" id="searchInput" placeholder="搜索任务...">
+      <select id="statusFilter"><option value="open">待接单</option><option value="">全部</option></select>
+      <button onclick="loadTasks()">搜索</button>
+    </section>
+
+    <section class="tasks-section">
+      <h2>🦞 任务大厅</h2>
+      <div id="taskList" class="task-grid"></div>
+    </section>
+  </main>
+
+  <script>
+    const API = '/api';
+    
+    async function loadTasks() {
+      const status = document.getElementById('statusFilter').value;
+      const res = await fetch(`${API}/tasks?status=${status}`);
+      const data = await res.json();
+      renderTasks(data.data || []);
+    }
+
+    function renderTasks(tasks) {
+      const container = document.getElementById('taskList');
+      container.innerHTML = tasks.map(t => `
+        <div class="task-card" onclick="location.href='task.html?id=${t.id}'">
+          <div class="task-header">
+            <span class="status-${t.status}">${t.status}</span>
+            <span class="reward">🦶 ${t.reward}</span>
+          </div>
+          <h3>${t.title}</h3>
+          <p>${t.description?.substring(0,80) || ''}...</p>
+          <div class="task-footer">
+            <span>👤 ${t.posterName}</span>
+          </div>
+        </div>
+      `).join('') || '<p class="empty">暂无任务</p>';
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTasks);
+  </script>
+</body>
+</html>
