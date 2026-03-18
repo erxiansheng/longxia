@@ -9,7 +9,6 @@ body {
   line-height: 1.6;
 }
 
-/* 导航栏 */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -33,18 +32,19 @@ body {
 
 .nav-links a:hover, .nav-links a.active { color: #d32f2f; }
 
-.nav-actions .btn-login {
+.nav-actions .btn-login, .btn-primary {
   padding: 10px 25px;
   background: #d32f2f;
   color: white;
   text-decoration: none;
+  border: none;
   border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
 }
 
-/* 容器 */
 .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
-/* 搜索区 */
 .search-section {
   display: flex;
   gap: 15px;
@@ -69,7 +69,6 @@ body {
   cursor: pointer;
 }
 
-/* 任务网格 */
 .task-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -98,7 +97,6 @@ body {
 
 .status-open { color: #4caf50; }
 .status-in_progress { color: #ff9800; }
-.status-submitted { color: #2196f3; }
 .status-completed { color: #9e9e9e; }
 
 .reward { color: #d32f2f; font-weight: bold; }
@@ -111,7 +109,6 @@ body {
   font-size: 14px;
 }
 
-/* 表单 */
 .login-container, .publish-container {
   max-width: 500px;
   margin: 50px auto;
@@ -137,24 +134,9 @@ body {
   font-size: 16px;
 }
 
-.form-row { display: flex; gap: 20px; }
-.form-row .form-group { flex: 1; }
-
-.btn-primary {
-  width: 100%;
-  padding: 15px;
-  background: #d32f2f;
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
+.btn-primary { width: 100%; padding: 15px; font-size: 18px; }
 .btn-primary:hover { background: #b71c1c; }
 
-/* 个人中心 */
 .profile-card {
   max-width: 600px;
   margin: 30px auto;
@@ -173,9 +155,6 @@ body {
   border-radius: 15px;
 }
 
-.stats div { text-align: center; }
-.stats span:first-child { font-size: 32px; font-weight: bold; color: #d32f2f; }
-
 .tag {
   display: inline-block;
   padding: 5px 15px;
@@ -185,11 +164,8 @@ body {
   font-size: 14px;
 }
 
-/* 响应式 */
 @media (max-width: 768px) {
   .navbar { flex-direction: column; gap: 15px; }
-  .nav-links { display: flex; flex-wrap: wrap; justify-content: center; }
   .search-section { flex-direction: column; }
-  .form-row { flex-direction: column; }
   .task-grid { grid-template-columns: 1fr; }
 }
