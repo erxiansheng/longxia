@@ -2,7 +2,6 @@
  * 任务管理 API
  */
 
-const KV_NAMESPACE = 'longxia';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -22,12 +21,7 @@ function getId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
-function getKV(env) {
-  return env[KV_NAMESPACE] || env.my_kv;
-}
-
-export async function onRequest({ request, params, env }) {
-  const kv = getKV(env);
+export async function onRequest({ request, env }) {
   const method = request.method;
   const url = new URL(request.url);
   const parts = url.pathname.split('/').filter(Boolean);
@@ -39,10 +33,10 @@ export async function onRequest({ request, params, env }) {
     // GET /api/tasks - 任务列表
     if (method === 'GET' && !taskId) {
       const status = url.searchParams.get('status');
-      const list = await kv.list({ prefix: 'task:', limit: 100 });
+      const list = await env.MY_KV.list({ prefix: 'task:', limit: 100 });
       const tasks = [];
       for (const k of list.keys) {
-        const d = await kv.get(k.name, { type: 'json' });
+        const d = await env.MY_KV.get(k.name, { type: 'json' });
         if (d && (!status || d.status === status)) tasks.push(d);
       }
       return json({ success: true, data: tasks });
@@ -50,7 +44,7 @@ export async function onRequest({ request, params, env }) {
 
     // GET /api/task/:id
     if (method === 'GET' && taskId) {
-      const d = await kv.get(`task:${taskId}`, { type: 'json' });
+      const d = await env.MY_KV.get(`task:${taskId}`, { type: 'json' });
       if (!d) return error('任务不存在', 404);
       return json({ success: true, data: d });
     }
@@ -61,7 +55,7 @@ export async function onRequest({ request, params, env }) {
       if (!body.title || !body.reward) return error('缺少必填字段');
       
       const posterKey = `crayfish:user:${body.posterId}`;
-      const poster = await kv.get(posterKey, { type: 'json' });
+      const poster = await env.MY_KV.get(posterKey, { type: 'json' });
       if (!poster) return error('发布者不存在');
       if (poster.coins < body.reward) return error('虾钳余额不足');
 
@@ -76,56 +70,56 @@ export async function onRequest({ request, params, env }) {
 
       poster.coins -= body.reward;
       poster.tasksPosted = (poster.tasksPosted || 0) + 1;
-      await kv.put(`task:${id}`, JSON.stringify(task));
-      await kv.put(posterKey, JSON.stringify(poster));
+      await env.MY_KV.put(`task:${id}`, JSON.stringify(task));
+      await env.MY_KV.put(posterKey, JSON.stringify(poster));
       return json({ success: true, data: task, message: '发布成功' }, 201);
     }
 
     // POST /api/task/:id/accept - 接单
     if (method === 'POST' && parts[3] === 'accept') {
       const body = await request.json();
-      const task = await kv.get(`task:${taskId}`, { type: 'json' });
+      const task = await env.MY_KV.get(`task:${taskId}`, { type: 'json' });
       if (!task) return error('任务不存在', 404);
       if (task.status !== 'open') return error('任务已被接走');
       
       task.workerId = body.workerId;
       task.status = 'in_progress';
-      await kv.put(`task:${taskId}`, JSON.stringify(task));
+      await env.MY_KV.put(`task:${taskId}`, JSON.stringify(task));
       return json({ success: true, data: task, message: '接单成功' });
     }
 
     // POST /api/task/:id/submit - 提交
     if (method === 'POST' && parts[3] === 'submit') {
       const body = await request.json();
-      const task = await kv.get(`task:${taskId}`, { type: 'json' });
+      const task = await env.MY_KV.get(`task:${taskId}`, { type: 'json' });
       if (!task) return error('任务不存在', 404);
       if (task.status !== 'in_progress') return error('状态错误');
       
       task.submission = body.submission || '已完成';
       task.status = 'submitted';
-      await kv.put(`task:${taskId}`, JSON.stringify(task));
+      await env.MY_KV.put(`task:${taskId}`, JSON.stringify(task));
       return json({ success: true, message: '提交成功' });
     }
 
     // POST /api/task/:id/verify - 验收
     if (method === 'POST' && parts[3] === 'verify') {
       const body = await request.json();
-      const task = await kv.get(`task:${taskId}`, { type: 'json' });
+      const task = await env.MY_KV.get(`task:${taskId}`, { type: 'json' });
       if (!task) return error('任务不存在', 404);
       if (task.status !== 'submitted') return error('状态错误');
 
       if (body.pass && task.workerId) {
-        const worker = await kv.get(`crayfish:user:${task.workerId}`, { type: 'json' });
+        const worker = await env.MY_KV.get(`crayfish:user:${task.workerId}`, { type: 'json' });
         if (worker) {
           worker.coins = (worker.coins || 0) + task.reward;
           worker.tasksCompleted = (worker.tasksCompleted || 0) + 1;
-          await kv.put(`crayfish:user:${task.workerId}`, JSON.stringify(worker));
+          await env.MY_KV.put(`crayfish:user:${task.workerId}`, JSON.stringify(worker));
         }
         task.status = 'completed';
       } else {
         task.status = 'rejected';
       }
-      await kv.put(`task:${taskId}`, JSON.stringify(task));
+      await env.MY_KV.put(`task:${taskId}`, JSON.stringify(task));
       return json({ success: true, message: body.pass ? '验收通过！' : '已驳回' });
     }
 

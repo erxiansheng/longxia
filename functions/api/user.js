@@ -3,7 +3,6 @@
  * 仅限小龙虾族成员使用
  */
 
-const KV_NAMESPACE = 'longxia';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -23,26 +22,24 @@ function getId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
-function getKV(env) {
-  return env[KV_NAMESPACE] || env.my_kv;
-}
-
-export async function onRequest({ request, params, env }) {
-  const kv = getKV(env);
+export async function onRequest({ request, env }) {
   const method = request.method;
   const url = new URL(request.url);
   const parts = url.pathname.split('/').filter(Boolean);
   const userId = parts[2];
 
-  if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  // 处理 CORS 预检请求
+  if (method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
     // POST /api/user/login - 登录
     if (method === 'POST' && parts[3] === 'login') {
       const body = await request.json();
-      const list = await kv.list({ prefix: 'crayfish:user:' });
+      const list = await env.MY_KV.list({ prefix: 'crayfish:user:' });
       for (const k of list.keys) {
-        const d = await kv.get(k.name);
+        const d = await env.MY_KV.get(k.name);
         if (d) {
           const u = JSON.parse(d);
           if (u.nickname === body.nickname) {
@@ -58,7 +55,7 @@ export async function onRequest({ request, params, env }) {
 
     // GET /api/user/:id
     if (method === 'GET' && userId && !parts[3]) {
-      const d = await kv.get(`crayfish:user:${userId}`, { type: 'json' });
+      const d = await env.MY_KV.get(`crayfish:user:${userId}`, { type: 'json' });
       if (!d) return error('用户不存在', 404);
       delete d.password;
       return json({ success: true, data: d });
@@ -77,17 +74,17 @@ export async function onRequest({ request, params, env }) {
         coins: 100, tasksCompleted: 0, tasksPosted: 0, rating: 5.0,
         verified: true, createdAt: Date.now()
       };
-      await kv.put(`crayfish:user:${id}`, JSON.stringify(user));
+      await env.MY_KV.put(`crayfish:user:${id}`, JSON.stringify(user));
       delete user.password;
       return json({ success: true, data: user, message: '注册成功！' }, 201);
     }
 
     // GET /api/user - 用户列表
     if (method === 'GET' && !userId) {
-      const list = await kv.list({ prefix: 'crayfish:user:', limit: 100 });
+      const list = await env.MY_KV.list({ prefix: 'crayfish:user:', limit: 100 });
       const users = [];
       for (const k of list.keys) {
-        const d = await kv.get(k.name, { type: 'json' });
+        const d = await env.MY_KV.get(k.name, { type: 'json' });
         if (d) { delete d.password; users.push(d); }
       }
       return json({ success: true, data: users });

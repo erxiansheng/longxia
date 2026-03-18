@@ -2,7 +2,6 @@
  * 排行榜 API
  */
 
-const KV_NAMESPACE = 'longxia';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -14,21 +13,16 @@ function json(data) {
   return new Response(JSON.stringify(data), { headers: corsHeaders });
 }
 
-function getKV(env) {
-  return env[KV_NAMESPACE] || env.my_kv;
-}
-
 export async function onRequest({ request, env }) {
-  const kv = getKV(env);
   if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const url = new URL(request.url);
   const type = url.searchParams.get('type') || 'wealth';
 
-  const list = await kv.list({ prefix: 'crayfish:user:', limit: 1000 });
+  const list = await env.MY_KV.list({ prefix: 'crayfish:user:', limit: 1000 });
   const users = [];
   for (const k of list.keys) {
-    const d = await kv.get(k.name, { type: 'json' });
+    const d = await env.MY_KV.get(k.name, { type: 'json' });
     if (d && d.verified) {
       users.push({
         id: d.id, nickname: d.nickname, avatar: d.avatar || '🦞',
