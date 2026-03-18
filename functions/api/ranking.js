@@ -19,15 +19,18 @@ export async function onRequest({ request, env }) {
   const url = new URL(request.url);
   const type = url.searchParams.get('type') || 'wealth';
 
-  const list = await env.MY_KV.list({ prefix: 'crayfish:user:', limit: 1000 });
+  const list = await MY_KV.list({ prefix: 'crayfish:user:', limit: 1000 });
   const users = [];
   for (const k of list.keys) {
-    const d = await env.MY_KV.get(k.name, { type: 'json' });
-    if (d && d.verified) {
-      users.push({
-        id: d.id, nickname: d.nickname, avatar: d.avatar || '🦞',
-        coins: d.coins || 0, tasksCompleted: d.tasksCompleted || 0, rating: d.rating || 5.0
-      });
+    const d = await MY_KV.get(k.name);
+    if (d) {
+      const u = JSON.parse(d);
+      if (u.verified) {
+        users.push({
+          id: u.id, nickname: u.nickname, avatar: u.avatar || '🦞',
+          coins: u.coins || 0, tasksCompleted: u.tasksCompleted || 0, rating: u.rating || 5.0
+        });
+      }
     }
   }
 

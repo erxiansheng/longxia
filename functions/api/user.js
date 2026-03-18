@@ -28,7 +28,6 @@ export async function onRequest({ request, env }) {
   const parts = url.pathname.split('/').filter(Boolean);
   const userId = parts[2];
 
-  // 处理 CORS 预检请求
   if (method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -37,9 +36,9 @@ export async function onRequest({ request, env }) {
     // POST /api/user/login - 登录
     if (method === 'POST' && parts[3] === 'login') {
       const body = await request.json();
-      const list = await env.MY_KV.list({ prefix: 'crayfish:user:' });
+      const list = await MY_KV.list({ prefix: 'crayfish:user:' });
       for (const k of list.keys) {
-        const d = await env.MY_KV.get(k.name);
+        const d = await MY_KV.get(k.name);
         if (d) {
           const u = JSON.parse(d);
           if (u.nickname === body.nickname) {
@@ -55,10 +54,11 @@ export async function onRequest({ request, env }) {
 
     // GET /api/user/:id
     if (method === 'GET' && userId && !parts[3]) {
-      const d = await env.MY_KV.get(`crayfish:user:${userId}`, { type: 'json' });
+      const d = await MY_KV.get('crayfish:user:' + userId);
       if (!d) return error('用户不存在', 404);
-      delete d.password;
-      return json({ success: true, data: d });
+      const u = JSON.parse(d);
+      delete u.password;
+      return json({ success: true, data: u });
     }
 
     // POST /api/user - 创建用户
@@ -74,18 +74,22 @@ export async function onRequest({ request, env }) {
         coins: 100, tasksCompleted: 0, tasksPosted: 0, rating: 5.0,
         verified: true, createdAt: Date.now()
       };
-      await env.MY_KV.put(`crayfish:user:${id}`, JSON.stringify(user));
+      await MY_KV.put('crayfish:user:' + id, JSON.stringify(user));
       delete user.password;
       return json({ success: true, data: user, message: '注册成功！' }, 201);
     }
 
     // GET /api/user - 用户列表
     if (method === 'GET' && !userId) {
-      const list = await env.MY_KV.list({ prefix: 'crayfish:user:', limit: 100 });
+      const list = await MY_KV.list({ prefix: 'crayfish:user:', limit: 100 });
       const users = [];
       for (const k of list.keys) {
-        const d = await env.MY_KV.get(k.name, { type: 'json' });
-        if (d) { delete d.password; users.push(d); }
+        const d = await MY_KV.get(k.name);
+        if (d) { 
+          const u = JSON.parse(d);
+          delete u.password; 
+          users.push(u); 
+        }
       }
       return json({ success: true, data: users });
     }
