@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码片段 - 智能创意工作室</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/todo.css">
+    <link rel="stylesheet" href="css/theme-dark.css">
+</head>
+<body>
+    <header class="toolbar">
+        <a href="index.html" class="back-link">← 返回</a>
+        <h1>💡 代码片段</h1>
+        <div class="toolbar-actions">
+            <button id="themeToggle" class="btn btn-icon">🌙</button>
+        </div>
+    </header>
+
+    <main class="snippets-container">
+        <div class="snippet-input-section">
+            <input type="text" id="snippetTitle" placeholder="片段标题">
+            <select id="languageSelect">
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="sql">SQL</option>
+                <option value="bash">Bash</option>
+                <option value="json">JSON</option>
+                <option value="markdown">Markdown</option>
+            </select>
+            <input type="text" id="snippetTags" placeholder="标签 (逗号分隔)">
+            <textarea id="snippetCode" placeholder="粘贴代码..."></textarea>
+            <button id="addSnippetBtn" class="btn">保存片段</button>
+        </div>
+
+        <div class="search-section">
+            <input type="text" id="searchInput" placeholder="搜索片段...">
+        </div>
+
+        <div id="snippetsList" class="snippets-list"></div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script src="js/highlight.js"></script>
+    <script src="js/theme.js"></script>
+</body>
+</html>

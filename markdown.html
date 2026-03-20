@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown 编辑器 - 智能创意工作室</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .editor-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      height: calc(100vh - 200px);
+      min-height: 500px;
+    }
+    @media (max-width: 768px) {
+      .editor-container {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .editor-container.preview-mode .editor-pane { display: none; }
+      .editor-container:not(.preview-mode) .preview-pane { display: none; }
+    }
+    .pane {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .pane-header {
+      padding: 0.75rem 1rem;
+      background: var(--bg-dark);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    .editor-textarea {
+      flex: 1;
+      border: none;
+      border-radius: 0;
+      resize: none;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 1rem;
+    }
+    .preview-content {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      line-height: 1.8;
+    }
+    .preview-content h1 { font-size: 2rem; margin: 1rem 0; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    .preview-content h2 { font-size: 1.5rem; margin: 1rem 0; }
+    .preview-content h3 { font-size: 1.25rem; margin: 1rem 0; }
+    .preview-content p { margin: 0.75rem 0; }
+    .preview-content code {
+      background: var(--bg-dark);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+    .preview-content pre {
+      background: var(--bg-dark);
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .preview-content pre code {
+      background: none;
+      padding: 0;
+    }
+    .preview-content blockquote {
+      border-left: 4px solid var(--primary);
+      padding-left: 1rem;
+      margin: 1rem 0;
+      color: var(--text-secondary);
+    }
+    .preview-content ul, .preview-content ol { padding-left: 1.5rem; margin: 0.75rem 0; }
+    .preview-content li { margin: 0.25rem 0; }
+    .preview-content a { color: var(--primary); text-decoration: none; }
+    .preview-content a:hover { text-decoration: underline; }
+    .preview-content img { max-width: 100%; border-radius: var(--radius-sm); }
+    .preview-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    .preview-content th, .preview-content td {
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      text-align: left;
+    }
+    .preview-content th { background: var(--bg-dark); }
+    .view-toggle {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .view-toggle { display: flex; }
+    }
+    .doc-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 0;
+    }
+    .doc-title-input {
+      background: transparent;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      width: 200px;
+    }
+    .doc-title-input:focus {
+      outline: none;
+      background: var(--bg-dark);
+      border-radius: var(--radius-sm);
+      padding: 0.25rem 0.5rem;
+    }
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background: var(--bg-dark);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">🎨</div>
+        <span class="logo-text">智能创意工作室</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html" class="nav-link">首页</a>
+        <a href="markdown.html" class="nav-link active">Markdown</a>
+        <a href="mindmap.html" class="nav-link">思维导图</a>
+        <a href="todo.html" class="nav-link">待办清单</a>
+        <a href="snippets.html" class="nav-link">代码片段</a>
+        <button class="theme-toggle" id="themeToggle" title="切换主题">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card mb-3">
+      <div class="doc-info">
+        <input type="text" class="doc-title-input" id="docTitle" placeholder="未命名文档" />
+        <div class="flex gap-2" style="margin-left: auto;">
+          <button class="btn btn-secondary view-toggle" id="viewToggle">切换预览</button>
+          <button class="btn btn-secondary" id="newBtn">新建</button>
+          <button class="btn btn-secondary" id="exportMd">导出 .md</button>
+          <button class="btn btn-secondary" id="exportHtml">导出 .html</button>
+          <button class="btn btn-primary" id="saveBtn">💾 保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="toolbar-btn" data-action="h1" title="标题1">H1</button>
+      <button class="toolbar-btn" data-action="h2" title="标题2">H2</button>
+      <button class="toolbar-btn" data-action="h3" title="标题3">H3</button>
+      <span class="toolbar-divider"></span>
+      <button class="toolbar-btn" data-action="bold" title="加粗"><b>B</b></button>
+      <button class="toolbar-btn" data-action="italic" title="斜体"><i>I</i></button>
+      <button class="toolbar-btn" data-action="strike" title="删除线"><s>S</s></button>
+      <span class="toolbar-divider"></span>
+      <button class="toolbar-btn" data-action="ul" title="无序列表">• </button>
+      <button class="toolbar-btn" data-action="ol" title="有序列表">1.</button>
+      <button class="toolbar-btn" data-action="quote" title="引用">❝</button>
+      <span class="toolbar-divider"></span>
+      <button class="toolbar-btn" data-action="code" title="行内代码">&lt;/&gt;</button>
+      <button class="toolbar-btn" data-action="codeblock" title="代码块">{ }</button>
+      <button class="toolbar-btn" data-action="link" title="链接">🔗</button>
+      <button class="toolbar-btn" data-action="image" title="图片">🖼</button>
+      <button class="toolbar-btn" data-action="table" title="表格">⊞</button>
+      <button class="toolbar-btn" data-action="hr" title="分割线">—</button>
+    </div>
+
+    <div class="editor-container" id="editorContainer">
+      <div class="pane editor-pane">
+        <div class="pane-header">
+          <span>📝 编辑</span>
+          <span class="text-muted">Markdown</span>
+        </div>
+        <textarea class="editor-textarea" id="editor" placeholder="在这里输入 Markdown 内容..."></textarea>
+        <div class="status-bar">
+          <span id="charCount">0 字符</span>
+          <span id="wordCount">0 字</span>
+          <span id="lineCount">0 行</span>
+        </div>
+      </div>
+      <div class="pane preview-pane">
+        <div class="pane-header">
+          <span>👁️ 预览</span>
+          <span class="text-muted">渲染结果</span>
+        </div>
+        <div class="preview-content" id="preview"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/common.js"></script>
+  <script>
+    // Markdown 解析器
+    const MarkdownParser = {
+      parse(text) {
+        let html = text;
+
+        // 转义HTML特殊字符
+        html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // 代码块（必须先处理）
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+          return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+        });
+
+        // 行内代码
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+        // 标题
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+        // 粗体和斜体
+        html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        html = html.replace(/~~(.+?)~~/g, '<s>$1</s>');
+
+        // 链接和图片
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+        // 引用
+        html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+        // 合并连续的blockquote
+        html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
+
+        // 无序列表
+        html = html.replace(/^[\*\-] (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+        // 有序列表
+        html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+        // 分割线
+        html = html.replace(/^---+$/gm, '<hr>');
+
+        // 表格
+        html = html.replace(/^\|(.+)\|$/gm, (match, content) => {
+          const cells = content.split('|').map(c => c.trim());
+          if (cells.every(c => /^[-:]+$/.test(c))) {
+            return '<!--table-separator-->';
+          }
+          return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+        });
+        html = html.replace(/(<tr>.*<\/tr>\n?)+/g, (match) => {
+          const rows = match.split('\n').filter(r => r.trim() && !r.includes('table-separator'));
+          if (rows.length === 0) return match;
+          return '<table>' + rows.join('') + '</table>';
+        });
+        html = html.replace(/<!--table-separator-->/g, '');
+
+        // 段落
+        html = html.replace(/\n\n/g, '</p><p>');
+        html = '<p>' + html + '</p>';
+
+        // 清理空段落
+        html = html.replace(/<p>\s*<\/p>/g, '');
+        html = html.replace(/<p>\s*(<h[1-6]>)/g, '$1');
+        html = html.replace(/(<\/h[1-6]>)\s*<\/p>/g, '$1');
+        html = html.replace(/<p>\s*(<ul>)/g, '$1');
+        html = html.replace(/(<\/ul>)\s*<\/p>/g, '$1');
+        html = html.replace(/<p>\s*(<ol>)/g, '$1');
+        html = html.replace(/(<\/ol>)\s*<\/p>/g, '$1');
+        html = html.replace(/<p>\s*(<pre>)/g, '$1');
+        html = html.replace(/(<\/pre>)\s*<\/p>/g, '$1');
+        html = html.replace(/<p>\s*(<blockquote>)/g, '$1');
+        html = html.replace(/(<\/blockquote>)\s*<\/p>/g, '$1');
+        html = html.replace(/<p>\s*(<hr>)/g, '$1');
+        html = html.replace(/(<\/hr>)\s*<\/p>/g, '$1');
+        html = html.replace(/<p>\s*(<table>)/g, '$1');
+        html = html.replace(/(<\/table>)\s*<\/p>/g, '$1');
+
+        return html;
+      }
+    };
+
+    // 编辑器状态
+    let currentDocId = null;
+    let autoSaveTimer = null;
+
+    // DOM 元素
+    const editor = document.getElementById('editor');
+    const preview = document.getElementById('preview');
+    const docTitle = document.getElementById('docTitle');
+    const charCount = document.getElementById('charCount');
+    const wordCount = document.getElementById('wordCount');
+    const lineCount = document.getElementById('lineCount');
+    const editorContainer = document.getElementById('editorContainer');
+
+    // 更新预览
+    function updatePreview() {
+      const text = editor.value;
+      preview.innerHTML = MarkdownParser.parse(text);
+
+      // 更新统计
+      charCount.textContent = text.length + ' 字符';
+      wordCount.textContent = (text.match(/[\u4e00-\u9fa5]|\w+/g) || []).length + ' 字';
+      lineCount.textContent = (text.split('\n').length) + ' 行';
+    }
+
+    // 工具栏操作
+    document.querySelectorAll('.toolbar-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const selected = editor.value.substring(start, end);
+
+        let insert = '';
+        let cursorOffset = 0;
+
+        switch (action) {
+          case 'h1': insert = `# ${selected || '标题'}`; cursorOffset = 2; break;
+          case 'h2': insert = `## ${selected || '标题'}`; cursorOffset = 3; break;
+          case 'h3': insert = `### ${selected || '标题'}`; cursorOffset = 4; break;
+          case 'bold': insert = `**${selected || '粗体'}**`; cursorOffset = 2; break;
+          case 'italic': insert = `*${selected || '斜体'}*`; cursorOffset = 1; break;
+          case 'strike': insert = `~~${selected || '删除线'}~~`; cursorOffset = 2; break;
+          case 'ul': insert = `- ${selected || '列表项'}`; cursorOffset = 2; break;
+          case 'ol': insert = `1. ${selected || '列表项'}`; cursorOffset = 3; break;
+          case 'quote': insert = `> ${selected || '引用内容'}`; cursorOffset = 2; break;
+          case 'code': insert = `\`${selected || '代码'}\``; cursorOffset = 1; break;
+          case 'codeblock': insert = `\`\`\`\n${selected || '代码'}\n\`\`\``; cursorOffset = 4; break;
+          case 'link': insert = `[${selected || '链接文字'}](url)`; cursorOffset = 1; break;
+          case 'image': insert = `![${selected || '图片描述'}](url)`; cursorOffset = 2; break;
+          case 'table':
+            insert = `| 列1 | 列2 | 列3 |\n|-----|-----|-----|\n| 内容 | 内容 | 内容 |`;
+            break;
+          case 'hr': insert = '\n---\n'; break;
+        }
+
+        editor.setRangeText(insert, start, end, 'end');
+        editor.focus();
+        updatePreview();
+        scheduleAutoSave();
+      });
+    });
+
+    // 编辑器输入
+    editor.addEventListener('input', debounce(() => {
+      updatePreview();
+      scheduleAutoSave();
+    }, 300));
+
+    // 自动保存
+    function scheduleAutoSave() {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => {
+        saveDocument(true);
+      }, 2000);
+    }
+
+    // 保存文档
+    function saveDocument(silent = false) {
+      const docs = JSON.parse(localStorage.getItem('studio_docs') || '[]');
+      const title = docTitle.value || '未命名文档';
+      const content = editor.value;
+
+      if (currentDocId) {
+        const index = docs.findIndex(d => d.id === currentDocId);
+        if (index > -1) {
+          docs[index] = { ...docs[index], title, content, updatedAt: Date.now() };
+        }
+      } else {
+        currentDocId = generateId();
+        docs.push({
+          id: currentDocId,
+          title,
+          content,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+
+      localStorage.setItem('studio_docs', JSON.stringify(docs));
+      RecentManager.add('markdown', title, currentDocId);
+
+      if (!silent) {
+        Toast.success('文档已保存');
+      }
+    }
+
+    // 新建文档
+    document.getElementById('newBtn').addEventListener('click', () => {
+      if (editor.value && !confirm('确定要新建文档吗？当前内容将被清空。')) {
+        return;
+      }
+      currentDocId = null;
+      docTitle.value = '';
+      editor.value = '';
+      updatePreview();
+      Toast.success('已创建新文档');
+    });
+
+    // 导出Markdown
+    document.getElementById('exportMd').addEventListener('click', () => {
+      const title = docTitle.value || '未命名文档';
+      const blob = new Blob([editor.value], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      Toast.success('已导出 Markdown 文件');
+    });
+
+    // 导出HTML
+    document.getElementById('exportHtml').addEventListener('click', () => {
+      const title = docTitle.value || '未命名文档';
+      const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.8; }
+    h1, h2, h3 { margin: 1rem 0; }
+    code { background: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    pre { background: #f3f4f6; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+    blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; color: #666; }
+  </style>
+</head>
+<body>
+${preview.innerHTML}
+</body>
+</html>`;
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+      Toast.success('已导出 HTML 文件');
+    });
+
+    // 保存按钮
+    document.getElementById('saveBtn').addEventListener('click', () => saveDocument());
+
+    // 移动端视图切换
+    document.getElementById('viewToggle').addEventListener('click', () => {
+      editorContainer.classList.toggle('preview-mode');
+    });
+
+    // 加载文档（如果有ID参数）
+    function loadDocument() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+
+      if (id) {
+        const docs = JSON.parse(localStorage.getItem('studio_docs') || '[]');
+        const doc = docs.find(d => d.id === id);
+        if (doc) {
+          currentDocId = id;
+          docTitle.value = doc.title;
+          editor.value = doc.content;
+          updatePreview();
+        }
+      }
+    }
+
+    // 初始化
+    loadDocument();
+    updatePreview();
+    RecentManager.add('markdown', 'Markdown 编辑器');
+  </script>
+</body>
+</html>

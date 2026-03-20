@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能创意工作室</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero {
+      text-align: center;
+      padding: 3rem 0;
+    }
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+    .tool-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    .tool-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--gradient);
+      transform: scaleX(0);
+      transition: var(--transition);
+    }
+    .tool-card:hover::before {
+      transform: scaleX(1);
+    }
+    .tool-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+    .tool-icon.markdown { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+    .tool-icon.mindmap { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); }
+    .tool-icon.todo { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+    .tool-icon.snippets { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .tool-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .tool-desc {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+    .recent-item:hover {
+      background: var(--bg-card-hover);
+    }
+    .recent-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      background: var(--bg-card-hover);
+    }
+    .recent-info { flex: 1; }
+    .recent-title {
+      font-weight: 500;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+    .recent-time {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .quick-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .quick-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: var(--transition);
+    }
+    .quick-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero-title { font-size: 1.75rem; }
+    }
+    .stat-card {
+      text-align: center;
+      padding: 1rem;
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">🎨</div>
+        <span class="logo-text">智能创意工作室</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html" class="nav-link active">首页</a>
+        <a href="markdown.html" class="nav-link">Markdown</a>
+        <a href="mindmap.html" class="nav-link">思维导图</a>
+        <a href="todo.html" class="nav-link">待办清单</a>
+        <a href="snippets.html" class="nav-link">代码片段</a>
+        <button class="theme-toggle" id="themeToggle" title="切换主题">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1 class="hero-title">智能创意工作室</h1>
+      <p class="hero-subtitle">一站式创意工具集，助你高效创作</p>
+      <div class="quick-actions">
+        <a href="markdown.html" class="quick-btn">📝 新建文档</a>
+        <a href="mindmap.html" class="quick-btn">🧠 思维导图</a>
+        <a href="todo.html" class="quick-btn">✅ 添加任务</a>
+        <a href="snippets.html" class="quick-btn">💾 保存代码</a>
+      </div>
+    </section>
+
+    <section class="mb-4">
+      <div class="card">
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="stat-value" id="docCount">0</div>
+            <div class="stat-label">文档数量</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="taskCount">0</div>
+            <div class="stat-label">待办任务</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="completedCount">0</div>
+            <div class="stat-label">已完成</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="snippetCount">0</div>
+            <div class="stat-label">代码片段</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="section-title">🛠️ 创意工具</h2>
+      <div class="grid grid-4">
+        <a href="markdown.html" class="card tool-card">
+          <div class="tool-icon markdown">📝</div>
+          <h3 class="tool-name">Markdown 编辑器</h3>
+          <p class="tool-desc">实时预览、工具栏快捷操作、导出功能</p>
+        </a>
+        <a href="mindmap.html" class="card tool-card">
+          <div class="tool-icon mindmap">🧠</div>
+          <h3 class="tool-name">思维导图</h3>
+          <p class="tool-desc">可视化思维整理、拖拽编辑、导出图片</p>
+        </a>
+        <a href="todo.html" class="card tool-card">
+          <div class="tool-icon todo">✅</div>
+          <h3 class="tool-name">待办清单</h3>
+          <p class="tool-desc">任务管理、分类标签、番茄钟计时</p>
+        </a>
+        <a href="snippets.html" class="card tool-card">
+          <div class="tool-icon snippets">💾</div>
+          <h3 class="tool-name">代码片段</h3>
+          <p class="tool-desc">语法高亮、分类管理、一键复制</p>
+        </a>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">🕐 最近使用</h2>
+      <div class="card">
+        <div id="recentList">
+          <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <p>暂无最近使用记录</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/common.js"></script>
+  <script>
+    // 加载统计数据
+    function loadStats() {
+      const todos = JSON.parse(localStorage.getItem('studio_todos') || '[]');
+      const completed = todos.filter(t => t.completed).length;
+      const snippets = JSON.parse(localStorage.getItem('studio_snippets') || '[]');
+      const docs = JSON.parse(localStorage.getItem('studio_docs') || '[]');
+
+      document.getElementById('docCount').textContent = docs.length;
+      document.getElementById('taskCount').textContent = todos.filter(t => !t.completed).length;
+      document.getElementById('completedCount').textContent = completed;
+      document.getElementById('snippetCount').textContent = snippets.length;
+    }
+
+    // 加载最近使用记录
+    function loadRecent() {
+      const recent = JSON.parse(localStorage.getItem('studio_recent') || '[]');
+      const container = document.getElementById('recentList');
+
+      if (recent.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <p>暂无最近使用记录</p>
+          </div>
+        `;
+        return;
+      }
+
+      const icons = {
+        markdown: '📝',
+        mindmap: '🧠',
+        todo: '✅',
+        snippets: '💾'
+      };
+
+      const names = {
+        markdown: 'Markdown 编辑器',
+        mindmap: '思维导图',
+        todo: '待办清单',
+        snippets: '代码片段'
+      };
+
+      container.innerHTML = recent.slice(0, 5).map(item => `
+        <a href="${item.type}.html${item.id ? '?id=' + item.id : ''}" class="recent-item">
+          <div class="recent-icon">${icons[item.type] || '📄'}</div>
+          <div class="recent-info">
+            <div class="recent-title">${item.title || names[item.type]}</div>
+            <div class="recent-time">${formatTime(item.time)}</div>
+          </div>
+          <span class="text-muted">→</span>
+        </a>
+      `).join('');
+    }
+
+    function formatTime(timestamp) {
+      const now = Date.now();
+      const diff = now - timestamp;
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+
+      if (minutes < 1) return '刚刚';
+      if (minutes < 60) return `${minutes}分钟前`;
+      if (hours < 24) return `${hours}小时前`;
+      return `${days}天前`;
+    }
+
+    // 初始化
+    loadStats();
+    loadRecent();
+  </script>
+</body>
+</html>

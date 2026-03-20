@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务管理 - 智能创意工作室</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/todo.css">
+    <link rel="stylesheet" href="css/theme-dark.css">
+</head>
+<body>
+    <header class="toolbar">
+        <a href="index.html" class="back-link">← 返回</a>
+        <h1>✅ 任务管理</h1>
+        <div class="toolbar-actions">
+            <button id="themeToggle" class="btn btn-icon">🌙</button>
+        </div>
+    </header>
+
+    <main class="todo-container">
+        <div class="todo-input-section">
+            <input type="text" id="todoInput" placeholder="添加新任务...">
+            <select id="prioritySelect">
+                <option value="low">低优先级</option>
+                <option value="medium" selected>中优先级</option>
+                <option value="high">高优先级</option>
+            </select>
+            <input type="date" id="dueDateInput">
+            <button id="addTodoBtn" class="btn">添加</button>
+        </div>
+
+        <div class="todo-filters">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="active">进行中</button>
+            <button class="filter-btn" data-filter="completed">已完成</button>
+        </div>
+
+        <ul id="todoList" class="todo-list"></ul>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script src="js/todo.js"></script>
+    <script src="js/theme.js"></script>
+</body>
+</html>

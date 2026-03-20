@@ -1,0 +1,153 @@
+/* 全局样式 */
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --bg-color: #ffffff;
+    --bg-secondary: #f3f4f6;
+    --text-color: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --radius: 8px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* 导航网格 */
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.nav-card {
+    display: block;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow);
+}
+
+.nav-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+}
+
+.nav-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.nav-card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.nav-card p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* 工具栏 */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.toolbar h1 {
+    font-size: 1.25rem;
+}
+
+.back-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* 按钮 */
+.btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.btn:hover {
+    background: var(--primary-hover);
+}
+
+.btn-icon {
+    padding: 0.5rem;
+    font-size: 1.25rem;
+}
+
+/* 输入框 */
+input, textarea, select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* 页脚 */
+footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    margin-top: 3rem;
+}
+
+/* 隐藏类 */
+.hidden {
+    display: none !important;
+}

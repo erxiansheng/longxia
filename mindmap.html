@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>思维导图 - 智能创意工作室</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .mindmap-container {
+      position: relative;
+      height: calc(100vh - 250px);
+      min-height: 500px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .mindmap-canvas {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+    .mindmap-canvas:active {
+      cursor: grabbing;
+    }
+    .node {
+      position: absolute;
+      padding: 0.75rem 1.25rem;
+      background: var(--gradient);
+      color: white;
+      border-radius: var(--radius-sm);
+      cursor: move;
+      user-select: none;
+      min-width: 80px;
+      text-align: center;
+      font-weight: 500;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.2s, transform 0.1s;
+    }
+    .node:hover {
+      box-shadow: var(--shadow-lg);
+      transform: scale(1.02);
+    }
+    .node.selected {
+      outline: 3px solid var(--primary-light);
+      outline-offset: 2px;
+    }
+    .node.root {
+      font-size: 1.25rem;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    }
+    .node.child-1 { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+    .node.child-2 { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+    .node.child-3 { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .node.child-4 { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+    .node.child-5 { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+    .node-actions {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 0.25rem;
+    }
+    .node:hover .node-actions {
+      display: flex;
+    }
+    .node-action-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .node-action-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+    .zoom-controls {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .zoom-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .zoom-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+    .zoom-level {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    .help-hint {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    svg.connections {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .connection-line {
+      stroke: var(--primary);
+      stroke-width: 2;
+      fill: none;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">🎨</div>
+        <span class="logo-text">智能创意工作室</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html" class="nav-link">首页</a>
+        <a href="markdown.html" class="nav-link">Markdown</a>
+        <a href="mindmap.html" class="nav-link active">思维导图</a>
+        <a href="todo.html" class="nav-link">待办清单</a>
+        <a href="snippets.html" class="nav-link">代码片段</a>
+        <button class="theme-toggle" id="themeToggle" title="切换主题">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card mb-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <input type="text" class="input" id="mindmapTitle" placeholder="思维导图标题" style="width: 200px;">
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary" id="addRootBtn">➕ 添加根节点</button>
+          <button class="btn btn-secondary" id="clearBtn">🗑️ 清空</button>
+          <button class="btn btn-secondary" id="exportPng">📷 导出PNG</button>
+          <button class="btn btn-primary" id="saveBtn">💾 保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mindmap-container" id="mindmapContainer">
+      <svg class="connections" id="connectionsSvg"></svg>
+      <div class="mindmap-canvas" id="canvas"></div>
+      <div class="zoom-controls">
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="zoom-btn" id="zoomOut" title="缩小">−</button>
+        <button class="zoom-btn" id="zoomReset" title="重置">⟲</button>
+        <button class="zoom-btn" id="zoomIn" title="放大">+</button>
+      </div>
+      <div class="help-hint">
+        双击编辑 | 拖拽移动 | 点击选中后按 Delete 删除
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">编辑节点</h3>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="mb-3">
+        <label class="text-muted mb-2" style="display: block;">节点内容</label>
+        <input type="text" class="input" id="nodeContent" placeholder="输入节点内容">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelEdit">取消</button>
+        <button class="btn btn-primary" id="confirmEdit">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/common.js"></script>
+  <script>
+    // 思维导图数据
+    let mindmapData = {
+      id: null,
+      title: '未命名思维导图',
+      nodes: [],
+      zoom: 1,
+      pan: { x: 0, y: 0 }
+    };
+
+    let selectedNode = null;
+    let dragNode = null;
+    let dragOffset = { x: 0, y: 0 };
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+
+    const canvas = document.getElementById('canvas');
+    const container = document.getElementById('mindmapContainer');
+    const connectionsSvg = document.getElementById('connectionsSvg');
+
+    // 创建节点
+    function createNode(x, y, content = '新节点', parentId = null, level = 0) {
+      const id = generateId();
+      const node = {
+        id,
+        content,
+        x,
+        y,
+        parentId,
+        level
+      };
+      mindmapData.nodes.push(node);
+      renderNode(node);
+      updateConnections();
+      return node;
+    }
+
+    // 渲染节点
+    function renderNode(node) {
+      const existing = document.getElementById(node.id);
+      if (existing) existing.remove();
+
+      const el = document.createElement('div');
+      el.className = `node ${node.level === 0 ? 'root' : 'child-' + ((node.level - 1) % 5 + 1)}`;
+      el.id = node.id;
+      el.textContent = node.content;
+      el.style.left = node.x + 'px';
+      el.style.top = node.y + 'px';
+      el.style.transform = `scale(${mindmapData.zoom})`;
+
+      // 添加操作按钮
+      const actions = document.createElement('div');
+      actions.className = 'node-actions';
+      actions.innerHTML = `
+        <button class="node-action-btn" data-action="addChild" title="添加子节点">+</button>
+        <button class="node-action-btn" data-action="edit" title="编辑">✎</button>
+        <button class="node-action-btn" data-action="delete" title="删除">×</button>
+      `;
+      el.appendChild(actions);
+
+      // 事件绑定
+      el.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('node-action-btn')) return;
+        e.stopPropagation();
+        selectNode(node.id);
+        dragNode = node;
+        const rect = el.getBoundingClientRect();
+        dragOffset = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      });
+
+      el.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        openEditModal(node);
+      });
+
+      // 操作按钮
+      actions.querySelectorAll('.node-action-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const action = btn.dataset.action;
+          if (action === 'addChild') {
+            addChildNode(node);
+          } else if (action === 'edit') {
+            openEditModal(node);
+          } else if (action === 'delete') {
+            deleteNode(node.id);
+          }
+        });
+      });
+
+      canvas.appendChild(el);
+    }
+
+    // 选择节点
+    function selectNode(id) {
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+      if (id) {
+        document.getElementById(id)?.classList.add('selected');
+        selectedNode = mindmapData.nodes.find(n => n.id === id);
+      } else {
+        selectedNode = null;
+      }
+    }
+
+    // 添加子节点
+    function addChildNode(parent) {
+      const childCount = mindmapData.nodes.filter(n => n.parentId === parent.id).length;
+      const angle = (childCount * 45 - 90) * Math.PI / 180;
+      const distance = 180;
+      const x = parent.x + 100 + Math.cos(angle) * distance;
+      const y = parent.y + Math.sin(angle) * distance;
+
+      createNode(x, y, '子节点', parent.id, parent.level + 1);
+      Toast.success('已添加子节点');
+    }
+
+    // 删除节点
+    function deleteNode(id) {
+      if (mindmapData.nodes.find(n => n.id === id)?.level === 0) {
+        if (mindmapData.nodes.filter(n => n.level === 0).length <= 1) {
+          Toast.warning('至少保留一个根节点');
+          return;
+        }
+      }
+
+      // 递归删除子节点
+      const children = mindmapData.nodes.filter(n => n.parentId === id);
+      children.forEach(child => deleteNode(child.id));
+
+      mindmapData.nodes = mindmapData.nodes.filter(n => n.id !== id);
+      document.getElementById(id)?.remove();
+      updateConnections();
+      Toast.success('已删除节点');
+    }
+
+    // 更新连接线
+    function updateConnections() {
+      connectionsSvg.innerHTML = '';
+
+      mindmapData.nodes.forEach(node => {
+        if (node.parentId) {
+          const parent = mindmapData.nodes.find(n => n.id === node.parentId);
+          if (parent) {
+            const parentEl = document.getElementById(parent.id);
+            const nodeEl = document.getElementById(node.id);
+
+            if (parentEl && nodeEl) {
+              const parentRect = parentEl.getBoundingClientRect();
+              const nodeRect = nodeEl.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+
+              const x1 = parentRect.left + parentRect.width / 2 - containerRect.left;
+              const y1 = parentRect.top + parentRect.height / 2 - containerRect.top;
+              const x2 = nodeRect.left + nodeRect.width / 2 - containerRect.left;
+              const y2 = nodeRect.top + nodeRect.height / 2 - containerRect.top;
+
+              const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              const midX = (x1 + x2) / 2;
+              path.setAttribute('d', `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`);
+              path.setAttribute('class', 'connection-line');
+              connectionsSvg.appendChild(path);
+            }
+          }
+        }
+      });
+    }
+
+    // 编辑模态框
+    function openEditModal(node) {
+      selectedNode = node;
+      document.getElementById('nodeContent').value = node.content;
+      document.getElementById('editModal').classList.add('active');
+      document.getElementById('nodeContent').focus();
+    }
+
+    document.getElementById('closeModal').addEventListener('click', () => {
+      document.getElementById('editModal').classList.remove('active');
+    });
+
+    document.getElementById('cancelEdit').addEventListener('click', () => {
+      document.getElementById('editModal').classList.remove('active');
+    });
+
+    document.getElementById('confirmEdit').addEventListener('click', () => {
+      const content = document.getElementById('nodeContent').value.trim();
+      if (content && selectedNode) {
+        selectedNode.content = content;
+        document.getElementById(selectedNode.id).firstChild.textContent = content;
+        Toast.success('已更新节点');
+      }
+      document.getElementById('editModal').classList.remove('active');
+    });
+
+    // 拖拽和画布平移
+    document.addEventListener('mousemove', (e) => {
+      if (dragNode) {
+        const rect = container.getBoundingClientRect();
+        const x = (e.clientX - rect.left - dragOffset.x) / mindmapData.zoom - mindmapData.pan.x;
+        const y = (e.clientY - rect.top - dragOffset.y) / mindmapData.zoom - mindmapData.pan.y;
+        dragNode.x = Math.max(0, x);
+        dragNode.y = Math.max(0, y);
+        const el = document.getElementById(dragNode.id);
+        el.style.left = dragNode.x + 'px';
+        el.style.top = dragNode.y + 'px';
+        updateConnections();
+      } else if (isPanning) {
+        const dx = e.clientX - panStart.x;
+        const dy = e.clientY - panStart.y;
+        mindmapData.pan.x += dx / mindmapData.zoom;
+        mindmapData.pan.y += dy / mindmapData.zoom;
+        panStart = { x: e.clientX, y: e.clientY };
+        updateCanvasTransform();
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      dragNode = null;
+      isPanning = false;
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.target === canvas) {
+        selectNode(null);
+        isPanning = true;
+        panStart = { x: e.clientX, y: e.clientY };
+      }
+    });
+
+    // 键盘删除
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Delete' && selectedNode && !document.getElementById('editModal').classList.contains('active')) {
+        deleteNode(selectedNode.id);
+        selectedNode = null;
+      }
+    });
+
+    // 缩放
+    function updateCanvasTransform() {
+      canvas.style.transform = `translate(${mindmapData.pan.x}px, ${mindmapData.pan.y}px) scale(${mindmapData.zoom})`;
+      document.getElementById('zoomLevel').textContent = Math.round(mindmapData.zoom * 100) + '%';
+      updateConnections();
+    }
+
+    document.getElementById('zoomIn').addEventListener('click', () => {
+      mindmapData.zoom = Math.min(2, mindmapData.zoom + 0.1);
+      updateCanvasTransform();
+    });
+
+    document.getElementById('zoomOut').addEventListener('click', () => {
+      mindmapData.zoom = Math.max(0.3, mindmapData.zoom - 0.1);
+      updateCanvasTransform();
+    });
+
+    document.getElementById('zoomReset').addEventListener('click', () => {
+      mindmapData.zoom = 1;
+      mindmapData.pan = { x: 0, y: 0 };
+      updateCanvasTransform();
+    });
+
+    // 添加根节点
+    document.getElementById('addRootBtn').addEventListener('click', () => {
+      const centerX = container.offsetWidth / 2 - 50 + (Math.random() - 0.5) * 100;
+      const centerY = container.offsetHeight / 2 - 20 + (Math.random() - 0.5) * 100;
+      createNode(centerX, centerY, '新主题', null, 0);
+      Toast.success('已添加根节点');
+    });
+
+    // 清空
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (!confirm('确定要清空所有节点吗？')) return;
+      mindmapData.nodes = [];
+      canvas.innerHTML = '';
+      connectionsSvg.innerHTML = '';
+      Toast.success('已清空');
+    });
+
+    // 导出PNG
+    document.getElementById('exportPng').addEventListener('click', async () => {
+      // 使用html2canvas库或简化方案
+      const title = document.getElementById('mindmapTitle').value || '思维导图';
+
+      // 创建临时canvas
+      const tempCanvas = document.createElement('canvas');
+      const ctx = tempCanvas.getContext('2d');
+      const rect = container.getBoundingClientRect();
+
+      tempCanvas.width = rect.width * 2;
+      tempCanvas.height = rect.height * 2;
+      ctx.scale(2, 2);
+
+      // 背景
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-card').trim() || '#1e293b';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+
+      // 绘制连接线
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      mindmapData.nodes.forEach(node => {
+        if (node.parentId) {
+          const parent = mindmapData.nodes.find(n => n.id === node.parentId);
+          if (parent) {
+            ctx.beginPath();
+            ctx.moveTo(parent.x + 50, parent.y + 20);
+            ctx.lineTo(node.x + 50, node.y + 20);
+            ctx.stroke();
+          }
+        }
+      });
+
+      // 绘制节点
+      mindmapData.nodes.forEach(node => {
+        const el = document.getElementById(node.id);
+        if (el) {
+          const text = node.content;
+          ctx.font = node.level === 0 ? 'bold 18px sans-serif' : '14px sans-serif';
+          const textWidth = ctx.measureText(text).width;
+          const width = textWidth + 30;
+          const height = node.level === 0 ? 50 : 40;
+
+          // 背景
+          const gradient = ctx.createLinearGradient(node.x, node.y, node.x + width, node.y + height);
+          gradient.addColorStop(0, node.level === 0 ? '#8b5cf6' : '#3b82f6');
+          gradient.addColorStop(1, node.level === 0 ? '#6d28d9' : '#1d4ed8');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.roundRect(node.x, node.y, width, height, 8);
+          ctx.fill();
+
+          // 文字
+          ctx.fillStyle = 'white';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, node.x + width / 2, node.y + height / 2);
+        }
+      });
+
+      // 下载
+      const link = document.createElement('a');
+      link.download = `${title}.png`;
+      link.href = tempCanvas.toDataURL('image/png');
+      link.click();
+
+      Toast.success('已导出PNG');
+    });
+
+    // 保存
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      mindmapData.title = document.getElementById('mindmapTitle').value || '未命名思维导图';
+
+      const maps = JSON.parse(localStorage.getItem('studio_mindmaps') || '[]');
+
+      if (mindmapData.id) {
+        const index = maps.findIndex(m => m.id === mindmapData.id);
+        if (index > -1) {
+          maps[index] = { ...mindmapData, updatedAt: Date.now() };
+        }
+      } else {
+        mindmapData.id = generateId();
+        maps.push({ ...mindmapData, createdAt: Date.now(), updatedAt: Date.now() });
+      }
+
+      localStorage.setItem('studio_mindmaps', JSON.stringify(maps));
+      RecentManager.add('mindmap', mindmapData.title, mindmapData.id);
+      Toast.success('已保存');
+    });
+
+    // 加载
+    function loadMindmap() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+
+      if (id) {
+        const maps = JSON.parse(localStorage.getItem('studio_mindmaps') || '[]');
+        const map = maps.find(m => m.id === id);
+        if (map) {
+          mindmapData = { ...map };
+          document.getElementById('mindmapTitle').value = map.title;
+          mindmapData.nodes.forEach(node => renderNode(node));
+          updateConnections();
+          updateCanvasTransform();
+        }
+      } else {
+        // 创建默认中心节点
+        const centerX = container.offsetWidth / 2 - 50;
+        const centerY = container.offsetHeight / 2 - 20;
+        createNode(centerX, centerY, '中心主题', null, 0);
+      }
+    }
+
+    // 初始化
+    loadMindmap();
+    RecentManager.add('mindmap', '思维导图');
+  </script>
+</body>
+</html>

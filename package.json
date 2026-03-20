@@ -1,0 +1,31 @@
+{
+  "name": "intelligent-creative-studio",
+  "version": "1.0.0",
+  "description": "智能创意工作室 - 一站式创意写作与知识管理工具",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build required'",
+    "preview": "npx serve . -p 3000"
+  },
+  "keywords": [
+    "markdown",
+    "mindmap",
+    "todo",
+    "snippets",
+    "creative-writing",
+    "knowledge-management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}
